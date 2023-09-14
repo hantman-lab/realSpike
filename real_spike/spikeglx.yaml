@@ -1,0 +1,11 @@
+actors:
+  Acquirer:
+    package: actors.acquire
+    class: Acquirer
+
+  Visual:
+    package: actors.viz
+    class: Visualizer
+
+connections:
+  Acquirer.q_out: [Visual.q_in]
