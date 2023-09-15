@@ -1,2 +1,2 @@
 include real_spike/VERSION
-include setup.py
+include real_spike/actors/sglx_pkg/*.dll
