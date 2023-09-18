@@ -2,11 +2,14 @@
 
 from platform import python_version
 from ctypes import *
+import os
+
+dll_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "SglxApi.dll")
 
 if python_version() >= "3.8.0":
-    sglx = CDLL("SglxApi.dll", windmode=0)
+    sglx = CDLL(dll_path, windmode=0)
 else:
-    sglx = CDLL("SglxApi.dll")
+    sglx = CDLL(dll_path)
 
 
 # Usage ------------------
@@ -681,3 +684,4 @@ c_sglx_triggerGT.argtypes = [c_void_p, c_int, c_int]
 c_sglx_verifySha1 = sglx.c_sglx_verifySha1
 c_sglx_verifySha1.restype = c_bool
 c_sglx_verifySha1.argtypes = [T_sglx_callback, c_void_p, c_char_p]
+
