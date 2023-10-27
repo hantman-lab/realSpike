@@ -7,7 +7,7 @@ import os
 so_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "libSglxApi.so")
 
 if python_version() >= "3.8.0":
-    sglx = CDLL(so_path, windmode=0)
+    sglx = CDLL(so_path)
 else:
     sglx = CDLL(so_path)
 

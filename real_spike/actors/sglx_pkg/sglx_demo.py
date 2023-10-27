@@ -282,5 +282,5 @@ def latency_test():
 
 
 if __name__ == "__main__":
-    justConnect(ip_address="152.19.16.207", port=4142)
+    justConnect(ip_address="192.168.0.101", port=4142)
 

@@ -20,7 +20,9 @@ class Acquirer(Actor):
         # create a spikeglx connection handle
         self.hSglx = sglx.c_sglx_createHandle()
         # connect to spikeglx running on acquisition machine
-        # c_sglx_connect( hSglx, addr, port )
+        ip_address = "192.168.0.101"
+        port = 4142
+        c_sglx_connect( hSglx, ip_address.encode, port)
         #ok = sglx.c_sglx_connect(self.hSglx, "localhost".encode(), 4142)
         # start data acquisition
         logger.info('Completed setup for Acquirer')
