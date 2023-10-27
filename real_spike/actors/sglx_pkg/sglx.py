@@ -4,12 +4,12 @@ from platform import python_version
 from ctypes import *
 import os
 
-dll_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "SglxApi.dll")
+so_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "libSglxApi.so")
 
 if python_version() >= "3.8.0":
-    sglx = CDLL(dll_path, windmode=0)
+    sglx = CDLL(so_path, windmode=0)
 else:
-    sglx = CDLL(dll_path)
+    sglx = CDLL(so_path)
 
 
 # Usage ------------------
@@ -27,7 +27,7 @@ else:
 # Status callback for use with par2 and verifySHA1 calls.
 # sglx_demo_callback( status_string )
 #
-T_sglx_callback = WINFUNCTYPE( None, c_char_p )
+T_sglx_callback = CFUNCTYPE( None, c_char_p )
 
 @T_sglx_callback
 def sglx_demo_callback( status ):

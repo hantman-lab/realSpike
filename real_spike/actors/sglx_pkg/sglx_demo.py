@@ -4,12 +4,12 @@ import sglx as sglx
 from ctypes import byref, POINTER, c_int, c_short, c_bool, c_char_p
 
 
-def justConnect():
+def justConnect(ip_address: str, port: int):
     print( "\nCalling connect...\n\n" )
     hSglx = sglx.c_sglx_createHandle()
 
     # Using default loopback address and port
-    if sglx.c_sglx_connect( hSglx, "localhost".encode(), 4142 ):
+    if sglx.c_sglx_connect( hSglx, ip_address.encode(), port):
         print( "version <{}>\n".format( sglx.c_sglx_getVersion( hSglx ) ) )
     else:
         print( "error [{}]\n".format( sglx.c_sglx_getError( hSglx ) ) )
@@ -282,4 +282,5 @@ def latency_test():
 
 
 if __name__ == "__main__":
-    justConnect()
+    justConnect(ip_address="152.19.16.207", port=4142)
+
