@@ -3,9 +3,9 @@ actors:
     package: actors.acquire
     class: Acquirer
 
-  Visual:
+  Processor:
     package: actors.viz
-    class: Visualizer
+    class: Viz
 
 connections:
-  Acquirer.q_out: [Visual.q_in]
+  Acquirer.q_out: [Processor.q_in]

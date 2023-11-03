@@ -1,6 +1,6 @@
 from improv.actor import Actor
 import logging;
-from .sglx_pkg import sglx as sglx
+from ..sglx_pkg import sglx as sglx
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -19,12 +19,14 @@ class Acquirer(Actor):
     def setup(self):
         # create a spikeglx connection handle
         self.hSglx = sglx.c_sglx_createHandle()
+        logger.info("handle created")
+
         # connect to spikeglx running on acquisition machine
         ip_address = "192.168.0.101"
         port = 4142
-        c_sglx_connect( hSglx, ip_address.encode, port)
-        #ok = sglx.c_sglx_connect(self.hSglx, "localhost".encode(), 4142)
-        # start data acquisition
+        c_sglx_connect(hSglx, ip_address.encode(), port)
+        logger.info("connection made")
+
         logger.info('Completed setup for Acquirer')
 
     def stop(self):
@@ -38,5 +40,9 @@ class Acquirer(Actor):
 
     def runStep(self):
         # start acquisition
+        # ok = sglx.c_sglx_connect(self.hSglx, "localhost".encode(), 4142)
+        # start data acquisition
         #sglx.c_sglx_startRun(self.hSglx)
-        pass
+        logger.info("run run run")
+
+
