@@ -4,7 +4,7 @@ from time import time
 
 
 def connect(ip_address: str, port: int):
-    """Check that connection can be made to SpikeGLX running on aquisition machine."""
+    """Check that connection can be made to SpikeGLX running on acquisition machine."""
     print("Calling connect...\n\n")
     hSglx = sglx.c_sglx_createHandle()
 
@@ -19,7 +19,12 @@ def connect(ip_address: str, port: int):
 
 
 def check_inits(ip_address: str, port: int):
-    """Check initial conditions of SpikeGLX before attempting to fetch."""
+    """
+    Check initial conditions of SpikeGLX before attempting to fetch.
+
+    1.) Checks if SpikeGLX has completed its startup initialization and is ready to run.
+    2.) If initialization is True, will check if SpikeGLX is currently acquiring data.
+    """
     hSglx = sglx.c_sglx_createHandle()
     ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
 
@@ -28,6 +33,7 @@ def check_inits(ip_address: str, port: int):
         ok = sglx.c_sglx_isInitialized(byref(ready), hSglx)
         if not ok:
             print("SpikeGLX has NOT completed its startup initialization")
+            print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
 
             sglx.c_sglx_close(hSglx)
             sglx.c_sglx_destroyHandle(hSglx)
@@ -51,6 +57,7 @@ def check_inits(ip_address: str, port: int):
 
 
 def get_params(ip_address: str, port: int):
+    """Gets the most recent run parameters used for SpikeGLX."""
     print("Get params...")
     hSglx = sglx.c_sglx_createHandle()
     ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
@@ -76,6 +83,7 @@ def get_params(ip_address: str, port: int):
 
 
 def get_datadir(ip_address: str, port: int):
+    """Gets the global data directory."""
     hSglx = sglx.c_sglx_createHandle()
     ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
 
@@ -100,6 +108,10 @@ def get_datadir(ip_address: str, port: int):
 
 
 def get_probes(ip_address: str, port: int):
+    """
+    Gets the list of available probe list. Should return in the format:
+    (probeID,nShanks,partNumber)
+    """
     hSglx = sglx.c_sglx_createHandle()
     ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
 
@@ -107,6 +119,7 @@ def get_probes(ip_address: str, port: int):
         list = c_char_p()
         ok = sglx.c_sglx_getProbeList(byref(list), hSglx)
         if ok:
+            #print(sglx.c_sglx_getstr(list))
             print(list.value)
     if not ok:
         print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
@@ -116,6 +129,11 @@ def get_probes(ip_address: str, port: int):
 
 
 def get_imec_params(ip_address: str, port: int, ip=0):
+    """
+    Get parameters for a given imec probe. Probe id specified by `ip`.
+
+    To get params of all available probes, see c_sglx_getParamsImecCommon.
+    """
     hSglx = sglx.c_sglx_createHandle()
     ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
 
@@ -137,6 +155,12 @@ def get_imec_params(ip_address: str, port: int, ip=0):
 
 
 def fetch_data(ip_address: str, port: int, ip=0):
+    """
+    Fetching data.
+
+    Currently, get the number of available channels for the specified probe and
+    then attempts to fetch for a given sample length.
+    """
     hSglx = sglx.c_sglx_createHandle()
     ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
 
@@ -145,8 +169,22 @@ def fetch_data(ip_address: str, port: int, ip=0):
         data = POINTER(c_short)()
         ndata = c_int()
 
-        # collect from first 60 channels on the probe
-        py_chans = [i for i in range(60)]
+        # first get the number of channels for a given probe
+        nval = c_int()
+        ok = sglx.c_sglx_getStreamAcqChans(byref(nval), hSglx, js, ip)
+
+        if ok:
+            num_chan = sglx.c_sglx_getint(nval)
+            print(f"Number of channels available for probe {ip} = {num_chan}")
+
+        if not ok:
+            print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+            sglx.c_sglx_close(hSglx)
+            sglx.c_sglx_destroyHandle(hSglx)
+            return
+
+        # collect from channels on the probe given by getStreamAcqChans
+        py_chans = [i for i in range(num_chan)]
 
         # number of channels getting data from
         n_cs = len(py_chans)
@@ -162,10 +200,18 @@ def fetch_data(ip_address: str, port: int, ip=0):
         # get number of samples since current run started
         # use as start sample
         fromCt = sglx.c_sglx_getStreamSampleCount(hSglx, js, ip)
+        print(f"fromCt = {fromCt}")
+
+        # max_samps = max # of samples to aquire
+        max_samps = 120
 
         if fromCt > 0:
-            headCt = sglx.c_sglx_fetch(byref(data), byref(ndata), hSglx, js, ip, fromCt, max_samps, channel_subset,
+            headCt = sglx.c_sglx_fetch(byref(data), byref(ndata), hSglx, js, ip, int(fromCt), max_samps, channel_subset,
                                        n_cs, downsample)
+
+            # looks like fetchLatest takes the same params except doesn't use max_samps, will just fetch one time
+            #headCt = sglx.c_sglx_fetchLatest(byref(data), byref(ndata), hSglx, js, ip, int(fromCt), channel_subset,
+                                     #  n_cs, downsample)
 
             if headCt == 0:
                 print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
@@ -174,6 +220,8 @@ def fetch_data(ip_address: str, port: int, ip=0):
                 return
 
             print(data.value)
+        elif fromCt == 0:
+            print("fromCt is 0, check if aquisition is set up properly")
 
     if not ok:
         print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
@@ -185,13 +233,16 @@ def fetch_data(ip_address: str, port: int, ip=0):
 if __name__ == "__main__":
     # practice connection
     connect(ip_address="192.168.0.101", port=4142)
+    # get initial conditions and if spikeglx is acquiring
+    #check_inits(ip_address="192.168.0.101", port=4142)
     # get parameters
-    get_params(ip_address="192.168.0.101", port=4142)
+    #get_params(ip_address="192.168.0.101", port=4142)
     # get the main data_dir
-    get_datadir(ip_address="192.168.0.101", port=4142)
+    #get_datadir(ip_address="192.168.0.101", port=4142)
     # get probes
-    get_probes(ip_address="192.168.0.101", port=4142)
+    #get_probes(ip_address="192.168.0.101", port=4142)
     # get imec probe params for a given probe
-    get_imec_params(ip_address="192.168.0.101", port=4142, ip=0)
+    #get_imec_params(ip_address="192.168.0.101", port=4142, ip=0)
     # fetch data
-    fetch_data(ip_address="192.168.0.101", port=4142, ip=0)
+    #fetch_data(ip_address="192.168.0.101", port=4142, ip=0)
+
