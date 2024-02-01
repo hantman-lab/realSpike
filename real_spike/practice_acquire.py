@@ -206,8 +206,11 @@ def fetch_data(ip_address: str, port: int, ip=0):
         max_samps = 120
 
         if fromCt > 0:
+            # get time it takes to fetch
+            t = time()
             headCt = sglx.c_sglx_fetch(byref(data), byref(ndata), hSglx, js, ip, int(fromCt), max_samps, channel_subset,
                                        n_cs, downsample)
+            print(time() - t)
 
             # looks like fetchLatest takes the same params except doesn't use max_samps, will just fetch one time
             #headCt = sglx.c_sglx_fetchLatest(byref(data), byref(ndata), hSglx, js, ip, int(fromCt), channel_subset,
@@ -242,7 +245,6 @@ if __name__ == "__main__":
     # get probes
     #get_probes(ip_address="192.168.0.101", port=4142)
     # get imec probe params for a given probe
-    #get_imec_params(ip_address="192.168.0.101", port=4142, ip=0)
+    #get_imec_params(ip_address="192.168.0.101", port=4142, ip=3)
     # fetch data
-    #fetch_data(ip_address="192.168.0.101", port=4142, ip=0)
-
+    #fetch_data(ip_address="192.168.0.101", port=4142, ip=3)
