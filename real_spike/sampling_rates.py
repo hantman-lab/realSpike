@@ -62,7 +62,8 @@ def data_fetch(
         hSglx,
         channel_num: int,
         sample_num: int,
-        ip: int
+        ip: int,
+        downsample: int
 ):
     """
     Get the latency at differing interval and sample rates to be stored in a pandas dataframe.
@@ -101,7 +102,7 @@ def data_fetch(
     channel_subset = (c_int * n_cs)(*py_chans)
 
     # downsample = every nth sample
-    downsample = 1
+    #downsample = 1
 
     # get sampling rate
     srate = sglx.c_sglx_getStreamSampleRate(hSglx, js, ip)
@@ -131,7 +132,7 @@ def data_fetch(
     # once fetch is done for given sample_rate, channel_num, sample_num
     # add row to df
     # print df
-    df.loc[len(df.index)] = [datetime.now().strftime("%d/%m/%Y %H:%M:%S"), channel_num, sample_num, srate, t2]
+    df.loc[len(df.index)] = [datetime.now().strftime("%d/%m/%Y %H:%M:%S"), channel_num, sample_num, srate / downsample, t2]
 
     df.to_hdf(df_path, key="df")
 
@@ -149,19 +150,23 @@ if __name__ == "__main__":
         list = c_char_p()
         ok = sglx.c_sglx_getProbeList(byref(list), hSglx)
         if ok:
-            print(list.value)
+            print(f"Available probes: {list.value}")
         # get number of available channels on probe
-        nval = c_int()
-        ok = sglx.c_sglx_getStreamAcqChans(byref(nval), hSglx, 2, list[0])
+        # nval = c_int()
+        # ok = sglx.c_sglx_getStreamAcqChans(byref(nval), hSglx, 2, 0)
+        #
+        # if ok:
+        #     num_chan = sglx.c_sglx_getint(hSglx, nval)
+        #     print(f"Number of channels available for probe {0} = {num_chan}")
+        channels = [i for i in range(1,384)]
+        downsamples = [i for i in range(1,30)]
 
-        if ok:
-            num_chan = sglx.c_sglx_getint(nval)
-            print(f"Number of channels available for probe {list[0]} = {num_chan}")
-
-        # data_fetch(hSglx=hSglx,
-        #            channel_num=num_chan,
-        #            sample_num=1000,
-        #            ip=list[0])
+        for d in downsamples:
+            data_fetch(hSglx=hSglx,
+                       channel_num=384,
+                       sample_num=1,
+                       ip=0,
+                       downsample=d)
 
         # will need to eventually close connection
         sglx.c_sglx_close(hSglx)
