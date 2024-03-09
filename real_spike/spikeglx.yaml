@@ -1,0 +1,11 @@
+actors:
+  Acquirer:
+    package: actors.acquire
+    class: Acquirer
+
+  Processor:
+    package: actors.viz
+    class: Viz
+
+connections:
+  Acquirer.q_out: [Processor.q_in]
