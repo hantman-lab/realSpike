@@ -4,14 +4,6 @@ from pathlib import Path
 install_requires = [
     "numpy",
     "fastplotlib",
-    "ipywidgets",
-    "pytest",
-    "glfw",
-    "tqdm",
-    "requests",
-    "jupyter-rfb",
-    "jupyterlab<4",
-    "jupyterlab-widgets",
     "improv"
 ]
 
