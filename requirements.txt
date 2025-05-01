@@ -1,3 +1,2 @@
 numpy
 fastplotlib[imgui]
-improv
