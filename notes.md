@@ -24,10 +24,10 @@ and gives access to the necessary SpikeGLX API calls for making a connection/fet
 
 ## 5/5/25
 
-- Get working environment for `improv`/`fastplotlib`
+- Get working environment 
   - install `improv` (see below) 
     - must have `redis` already installed!
-  - install `fastplotlib` via `pip install fastplotlib[imgui]`
+  - install other dependencies via `pip install -r requirements.txt`
 
 For now, need to work off of a branch from Richard's fork.
 ```bash

@@ -1,11 +1,15 @@
 actors:
   Generator:
-    package: actors.data
+    package: actors.generator
     class: Generator
 
   Processor:
-    package: actors.viz
+    package: actors.processor
     class: Processor
+
+  Visual:
+    package: actors.visual
+    class: Visual
 
 connections:
   Generator-Processor:
@@ -13,3 +17,8 @@ connections:
       - Generator.q_out
     sinks:
       - Processor.q_in
+  Processor-Visual:
+    sources:
+      - Processor.q_out
+    sinks:
+      - Visual.q_in
