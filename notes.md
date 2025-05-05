@@ -42,11 +42,9 @@ git remote add rwschonberg https://github.com/rwschonberg/improv
 git fetch rwschonberg
 # checkout a new branch off of the zmq branch
 git checkout -b redis-only rwschonberg/zmq
-```
 
-> **IMPORTANT:** Relax the `numpy` constraint in the `pyproject.toml` before installing in-place
-
-```bash
+### IMPORTANT: relax the numpy constraint in the pyproject.toml before in-place install
 pip install -e .
 ```
+
 

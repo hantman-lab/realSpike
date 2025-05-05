@@ -1,0 +1,15 @@
+actors:
+  Generator:
+    package: actors.data
+    class: Generator
+
+  Processor:
+    package: actors.viz
+    class: Processor
+
+connections:
+  Generator-Processor:
+    sources:
+      - Generator.q_out
+    sinks:
+      - Processor.q_in

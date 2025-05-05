@@ -4,3 +4,7 @@
 # PyCharm
 .idea/
 
+# log files
+*.log
+
+*__pycache__/

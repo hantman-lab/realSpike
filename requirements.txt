@@ -1,1 +1,3 @@
-fastplotlib[imgui]
+fastplotlib[imgui, notebook]
+tifffile
+scipy
