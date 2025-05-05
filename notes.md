@@ -22,3 +22,31 @@ sudo chmod +x make-install.sh
 The shared object file `libSglxApi.so` that is created can be copied into the `realSpike` directory 
 and gives access to the necessary SpikeGLX API calls for making a connection/fetching data. 
 
+## 5/5/25
+
+- Get working environment for `improv`/`fastplotlib`
+  - install `improv` (see below) 
+    - must have `redis` already installed!
+  - install `fastplotlib` via `pip install fastplotlib[imgui]`
+
+For now, need to work off of a branch from Richard's fork.
+```bash
+# clone
+git clone https://github.com/project-improv/improv.git
+
+cd improv/
+
+# add remote 
+git remote add rwschonberg https://github.com/rwschonberg/improv
+# fetch his branches
+git fetch rwschonberg
+# checkout a new branch off of the zmq branch
+git checkout -b redis-only rwschonberg/zmq
+```
+
+> **IMPORTANT:** Relax the `numpy` constraint in the `pyproject.toml` before installing in-place
+
+```bash
+pip install -e .
+```
+
