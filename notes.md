@@ -21,3 +21,4 @@ sudo chmod +x make-install.sh
 
 The shared object file `libSglxApi.so` that is created can be copied into the `realSpike` directory 
 and gives access to the necessary SpikeGLX API calls for making a connection/fetching data. 
+
