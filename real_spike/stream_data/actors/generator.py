@@ -34,6 +34,8 @@ class Generator(ZmqActor):
         return 0
 
     def run_step(self):
+        if self.frame_num == 100:
+            return
         if self.frame_num == ((self.data.shape[1] - 1) / self.window) - 1:
             return
         # new data, send 5ms

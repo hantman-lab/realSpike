@@ -22,3 +22,6 @@ connections:
       - Processor.q_out
     sinks:
       - Visual.q_in
+
+settings:
+  store_size: 5_000_000_000

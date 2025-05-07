@@ -47,4 +47,16 @@ git checkout -b redis-only rwschonberg/zmq
 pip install -e .
 ```
 
+# 5/6/25
 
+- Increasing maximum store size
+  - include as a setting in the yaml file 
+
+```yaml
+actors: ... 
+
+connections: ...
+
+settings: 
+  - store_size = 5_000_000_000
+```

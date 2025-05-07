@@ -23,6 +23,6 @@ Practice streaming raw voltage data from disk, performing MUA, and visualizing i
   - [ ] one segment of data?
   - [ ] from generator to processor to viz? 
 
-## ISSUES
+## Usage
 
-- store size is very small (0.25GB), will only process that much data before maxmemory exceeded errors
+[//]: # (add how to run etc)
