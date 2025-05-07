@@ -22,7 +22,18 @@ Practice streaming raw voltage data from disk, performing MUA, and visualizing i
   - [ ] whole chunk of data? (~8 GB)
   - [ ] one segment of data?
   - [ ] from generator to processor to viz? 
+- [ ] optimize the plotting code better so it streams easier (just change y values)
 
 ## Usage
 
-[//]: # (add how to run etc)
+1. Start the TUI and call setup
+
+```bash
+improv run ./real_spike/stream_data/stream.yaml 
+
+setup
+```
+
+2. In the jupyter lab notebook run all the cells until you see initial plot 
+
+3. Call `run` in the TUI
