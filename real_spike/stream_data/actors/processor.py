@@ -1,6 +1,6 @@
 from improv.actor import ZmqActor
 import logging
-from real_spike.utils import *
+import scipy.signal
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -49,9 +49,20 @@ class Processor(ZmqActor):
             # send filtered data to viz
             data_id = self.client.put(data)
             try:
-                self.improv_logger.info("Sending frame!")
                 self.q_out.put(data_id)
                 self.frame_num += 1
 
             except Exception as e:
                 self.improv_logger.error(f"Processor Exception: {e}")
+
+# define filter functions
+def butter(cutoff, fs, order=5, btype='high'):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = scipy.signal.butter(order, normal_cutoff, btype=btype, analog=False)
+    return b, a
+
+def butter_filter(data, cutoff, fs, order=5, axis=-1, btype='high'):
+    b, a = butter(cutoff, fs, order=order, btype=btype)
+    y = scipy.signal.filtfilt(b, a, data, axis=axis)
+    return y

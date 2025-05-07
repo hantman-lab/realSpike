@@ -1,7 +1,6 @@
 from improv.actor import ZmqActor
 import logging
 import zmq
-import time
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -39,7 +38,6 @@ class Visual(ZmqActor):
         if frame is not None:
             self.done = False
             self.frame = self.client.get(frame)
-            self.improv_logger.info(f"Sending data via zmq")
 
             self.socket.send(self.frame.ravel())
 
