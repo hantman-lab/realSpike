@@ -23,6 +23,7 @@ Practice streaming raw voltage data from disk, performing MUA, and visualizing i
   - [ ] one segment of data?
   - [ ] from generator to processor to viz? 
 - [ ] optimize the plotting code better so it streams easier (just change y values)
+- [ ] fix the relative import for the utils
 
 ## Usage
 

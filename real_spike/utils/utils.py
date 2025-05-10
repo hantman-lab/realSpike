@@ -1,6 +1,5 @@
 """Utility functions for making an MUA viz."""
 from typing import List
-import h5py
 import scipy.signal
 import numpy as np
 

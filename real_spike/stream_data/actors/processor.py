@@ -55,12 +55,15 @@ class Processor(ZmqActor):
             except Exception as e:
                 self.improv_logger.error(f"Processor Exception: {e}")
 
+
+
 # define filter functions
 def butter(cutoff, fs, order=5, btype='high'):
     nyq = 0.5 * fs
     normal_cutoff = cutoff / nyq
     b, a = scipy.signal.butter(order, normal_cutoff, btype=btype, analog=False)
     return b, a
+
 
 def butter_filter(data, cutoff, fs, order=5, axis=-1, btype='high'):
     b, a = butter(cutoff, fs, order=order, btype=btype)
