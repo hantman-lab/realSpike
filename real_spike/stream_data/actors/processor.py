@@ -1,6 +1,8 @@
 from improv.actor import ZmqActor
 import logging
 import scipy.signal
+from .latency import Latency
+import time
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -17,15 +19,18 @@ class Processor(ZmqActor):
             self.name = "Processor"
         self.frame = None
         self.frame_num = 1
+        self.latency = Latency("processor")
         self.improv_logger.info("Completed setup for Processor")
 
     def stop(self):
         self.improv_logger.info("Processor stopping")
         self.improv_logger.info(f"Processor processed {self.frame_num} frames")
+        self.latency.save()
         return 0
 
     def run_step(self):
         frame = None
+        t = time.perf_counter_ns()
         try:
             frame = self.q_in.get(timeout=0.05)
         except Exception as e:
@@ -50,6 +55,8 @@ class Processor(ZmqActor):
             data_id = self.client.put(data)
             try:
                 self.q_out.put(data_id)
+                t2 = time.perf_counter_ns()
+                self.latency.add(self.frame_num, t2 - t)
                 self.frame_num += 1
 
             except Exception as e:

@@ -1,3 +1,5 @@
 fastplotlib[imgui, notebook]
 tifffile
 scipy
+pandas
+matplotlib
