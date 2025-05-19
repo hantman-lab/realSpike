@@ -17,7 +17,7 @@ class Visual(ZmqActor):
     def setup(self):
         if not hasattr(self, "name"):
             self.name = "Visual"
-        self.frame_num = 1
+        self.frame_num = 27
         self.frame = None
 
         self.latency = Latency("visual")

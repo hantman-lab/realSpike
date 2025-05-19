@@ -3,6 +3,7 @@ import logging
 import scipy.signal
 from .latency import Latency
 import time
+import numpy as np
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -19,6 +20,10 @@ class Processor(ZmqActor):
             self.name = "Processor"
         self.frame = None
         self.frame_num = 1
+        # initialize median with first 4 seconds of data (26 frames)
+        self.median = None
+        self.data = list()
+
         self.latency = Latency("processor")
         self.improv_logger.info("Completed setup for Processor")
 
@@ -41,15 +46,27 @@ class Processor(ZmqActor):
             self.done = False
             self.frame = self.client.get(frame)
 
+            # accumulate 4 seconds of data
+            if self.frame_num < 27:
+                d = butter_filter(self.frame, 1000, 30_000)
+                self.data.append(d)
+                self.frame_num += 1
+                return
+            # use accumulated data to calculate median
+            elif self.frame_num == 27:
+                self.improv_logger.info("Initialized median")
+                self.median = np.median(np.concatenate(np.array(self.data), axis=1), axis=1)
+
             # high pass filter
             data = butter_filter(self.frame, 1000, 30_000)
 
             # get spike counts and report
-            # ixs = get_spike_events(data)
-            #
-            # # sum spike events across channels
-            # spike_counts = [np.count_nonzero(arr) for arr in ixs]
-            # self.improv_logger.info("Processed frame, spike counts: {}".format(spike_counts))
+            ixs = get_spike_events(data, self.median)
+
+            if self.frame_num % 100 == 0:
+                # sum spike events across channels
+                spike_counts = [np.count_nonzero(arr) for arr in ixs]
+                self.improv_logger.info(f"Processed frame {self.frame_num}, spike counts: {spike_counts}")
 
             # send filtered data to viz
             data_id = self.client.put(data)
@@ -76,3 +93,18 @@ def butter_filter(data, cutoff, fs, order=5, axis=-1, btype='high'):
     b, a = butter(cutoff, fs, order=order, btype=btype)
     y = scipy.signal.filtfilt(b, a, data, axis=axis)
     return y
+
+# get initial spike events from filtered data
+def get_spike_events(data: np.ndarray, median: np.ndarray, n_deviations: int = 4):
+    """
+    Calculates the median and MAD estimator. Returns a list of indices along each channel where
+    threshold crossing is made (above absolute value of median + (n_deviations * MAD).
+    """
+    # median = np.median(data, axis=1)
+    mad = scipy.stats.median_abs_deviation(data, axis=1)
+
+    thresh = (n_deviations * mad) + median
+
+    indices = [np.where(np.abs(data)[i] > thresh[i])[0] for i in range(data.shape[0])]
+
+    return indices

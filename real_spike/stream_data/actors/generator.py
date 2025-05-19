@@ -41,10 +41,11 @@ class Generator(ZmqActor):
     def run_step(self):
         if self.frame_num == ((self.data.shape[1] - 1) / self.window) - 1:
             return
-        t = time.perf_counter_ns()
+
         # new data, send 5ms
         l_time = int(self.frame_num * self.window)
         r_time = int((self.frame_num * self.window) + self.window)
+        t = time.perf_counter_ns()
         data = self.data[:, l_time:r_time]
         data_id = self.client.put(data)
         try:

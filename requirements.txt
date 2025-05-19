@@ -3,3 +3,4 @@ tifffile
 scipy
 pandas
 matplotlib
+tqdm
