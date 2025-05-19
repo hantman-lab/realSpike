@@ -47,9 +47,14 @@ class Generator(ZmqActor):
         r_time = int((self.frame_num * self.window) + self.window)
         t = time.perf_counter_ns()
         data = self.data[:, l_time:r_time]
+        # self.improv_logger.info(f"Generator: time to get data chunk {(time.perf_counter_ns() - t) / 1e6 }")
+        t2 = time.perf_counter_ns()
         data_id = self.client.put(data)
+        # self.improv_logger.info(f"Generator: time to get data id {(time.perf_counter_ns() - t2) / 1e6}")
         try:
+            t3 = time.perf_counter_ns()
             self.q_out.put(data_id)
+            # self.improv_logger.info(f"Generator: time to put data id in queue {(time.perf_counter_ns() - t3) / 1e6}")
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2-t)
             self.frame_num += 1
