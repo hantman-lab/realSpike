@@ -2,11 +2,18 @@ from improv.actor import ZmqActor
 import tifffile
 import logging
 import time
+import uuid
 
-from .latency import Latency
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from real_spike.utils import LatencyLogger
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
 
 
 class Generator(ZmqActor):
@@ -15,7 +22,7 @@ class Generator(ZmqActor):
         self.data = None
         self.name = "Generator"
         self.frame_num = 0
-        self.latency = Latency(actor_name="generator")
+        self.latency = LatencyLogger(name="generator")
 
         # specify step size, send 5 ms of data at a time
         self.sample_rate = 30_000
@@ -39,6 +46,8 @@ class Generator(ZmqActor):
         return 0
 
     def run_step(self):
+        if self.frame_num == 5_000:
+            return
         if self.frame_num == ((self.data.shape[1] - 1) / self.window) - 1:
             return
 
@@ -46,8 +55,9 @@ class Generator(ZmqActor):
         l_time = int(self.frame_num * self.window)
         r_time = int((self.frame_num * self.window) + self.window)
         t = time.perf_counter_ns()
-        data = self.data[:, l_time:r_time]
-        data_id = self.client.put(data)
+        data = self.data[:, l_time:r_time].tobytes()
+        data_id = str(os.getpid()) + str(uuid.uuid4())
+        self.client.client.set(data_id, data, nx=True)
         try:
             self.q_out.put(data_id)
             t2 = time.perf_counter_ns()

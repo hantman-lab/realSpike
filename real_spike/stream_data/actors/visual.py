@@ -2,7 +2,13 @@ from improv.actor import ZmqActor
 import logging
 import zmq
 import time
-from .latency import Latency
+import numpy as np
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from real_spike.utils import LatencyLogger
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -20,7 +26,7 @@ class Visual(ZmqActor):
         self.frame_num = 27
         self.frame = None
 
-        self.latency = Latency("visual")
+        self.latency = LatencyLogger("visual")
 
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
@@ -35,19 +41,22 @@ class Visual(ZmqActor):
         return 0
 
     def run_step(self):
-        frame = None
+        data_id = None
         t = time.perf_counter_ns()
         try:
-            frame = self.q_in.get(timeout=0.05)
+            data_id = self.q_in.get(timeout=0.05)
         except Exception as e:
             pass
 
-        if frame is not None:
+        if data_id is not None:
             self.done = False
-            self.frame = self.client.get(frame)
+            self.frame = np.frombuffer(self.client.client.get(data_id)).reshape(384, 150)
 
             self.socket.send(self.frame.ravel())
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)
             self.frame_num += 1
+
+            # delete data from store
+            self.client.client.delete(data_id)
 

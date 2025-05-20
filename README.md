@@ -19,6 +19,9 @@ cd realSpike/
 
 # install the requirements
 pip install -r requirements.txt
+
+# install in editable mode
+pip install -e .
 ```
 
 [//]: # (note about installing improv)

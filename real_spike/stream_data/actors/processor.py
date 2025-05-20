@@ -1,9 +1,13 @@
 from improv.actor import ZmqActor
 import logging
-import scipy.signal
-from .latency import Latency
 import time
-import numpy as np
+import pickle
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from real_spike.utils import *
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -23,8 +27,9 @@ class Processor(ZmqActor):
         # initialize median with first 4 seconds of data (26 frames)
         self.median = None
         self.data = list()
+        self.data_ids = list()
 
-        self.latency = Latency("processor")
+        self.latency = LatencyLogger("processor")
         self.improv_logger.info("Completed setup for Processor")
 
     def stop(self):
@@ -34,28 +39,34 @@ class Processor(ZmqActor):
         return 0
 
     def run_step(self):
-        frame = None
+        data_id = None
         t = time.perf_counter_ns()
         try:
-            frame = self.q_in.get(timeout=0.05)
+            # really getting a data_id in here
+            data_id = self.q_in.get(timeout=0.05)
         except Exception as e:
             logger.error(f"{self.name} could not get frame! At {self.frame_num}: {e}")
             pass
 
-        if frame is not None and self.frame_num is not None:
+        if data_id is not None and self.frame_num is not None:
             self.done = False
-            self.frame = self.client.get(frame)
+
+            self.frame = np.frombuffer(self.client.client.get(data_id)).reshape(384, 150)
 
             # accumulate 4 seconds of data
             if self.frame_num < 27:
                 d = butter_filter(self.frame, 1000, 30_000)
                 self.data.append(d)
+                self.data_ids.append(data_id)
                 self.frame_num += 1
                 return
             # use accumulated data to calculate median
             elif self.frame_num == 27:
                 self.improv_logger.info("Initialized median")
                 self.median = np.median(np.concatenate(np.array(self.data), axis=1), axis=1)
+                # delete all of the old data_ids
+                for i in self.data_ids:
+                    self.client.client.delete(i)
 
             # high pass filter
             data = butter_filter(self.frame, 1000, 30_000)
@@ -68,8 +79,10 @@ class Processor(ZmqActor):
                 spike_counts = [np.count_nonzero(arr) for arr in ixs]
                 self.improv_logger.info(f"Processed frame {self.frame_num}, spike counts: {spike_counts}")
 
-            # send filtered data to viz
-            data_id = self.client.put(data)
+            # reuse data id from before
+            # data = pickle.dumps(data.tobytes(), protocol=5)
+            self.client.client.set(data_id, data.tobytes(), nx=True)
+
             try:
                 self.q_out.put(data_id)
                 t2 = time.perf_counter_ns()
@@ -78,33 +91,3 @@ class Processor(ZmqActor):
 
             except Exception as e:
                 self.improv_logger.error(f"Processor Exception: {e}")
-
-
-
-# define filter functions
-def butter(cutoff, fs, order=5, btype='high'):
-    nyq = 0.5 * fs
-    normal_cutoff = cutoff / nyq
-    b, a = scipy.signal.butter(order, normal_cutoff, btype=btype, analog=False)
-    return b, a
-
-
-def butter_filter(data, cutoff, fs, order=5, axis=-1, btype='high'):
-    b, a = butter(cutoff, fs, order=order, btype=btype)
-    y = scipy.signal.filtfilt(b, a, data, axis=axis)
-    return y
-
-# get initial spike events from filtered data
-def get_spike_events(data: np.ndarray, median: np.ndarray, n_deviations: int = 4):
-    """
-    Calculates the median and MAD estimator. Returns a list of indices along each channel where
-    threshold crossing is made (above absolute value of median + (n_deviations * MAD).
-    """
-    # median = np.median(data, axis=1)
-    mad = scipy.stats.median_abs_deviation(data, axis=1)
-
-    thresh = (n_deviations * mad) + median
-
-    indices = [np.where(np.abs(data)[i] > thresh[i])[0] for i in range(data.shape[0])]
-
-    return indices
