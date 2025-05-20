@@ -50,7 +50,6 @@ class LatencyLogger:
             self.df.loc[len(self.df.index)] = [int(frame_number),  *latency]
 
     def save(self):
-        """Save the dataframe."""
-        # when stop is called in the actors, safe the df to disk
+        """Save the dataframe to disk."""
         self.df.to_pickle(f"./latency/{self.name}_latency_{time.strftime("%Y%m%d-%H%M%S")}.pkl")
 
