@@ -1,11 +1,10 @@
 from improv.actor import ZmqActor
 import logging
 import scipy.signal
-from .latency import Latency
+from real_spike.utils.latency import LatencyLogger
 import time
 import numpy as np
 import pickle
-import zlib
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -26,7 +25,7 @@ class Processor(ZmqActor):
         self.median = None
         self.data = list()
 
-        self.latency = Latency("processor")
+        self.latency = LatencyLogger("processor")
         self.improv_logger.info("Completed setup for Processor")
 
     def stop(self):

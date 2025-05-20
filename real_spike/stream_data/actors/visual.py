@@ -2,7 +2,7 @@ from improv.actor import ZmqActor
 import logging
 import zmq
 import time
-from .latency import Latency
+from real_spike.utils.latency import LatencyLogger
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -20,7 +20,7 @@ class Visual(ZmqActor):
         self.frame_num = 27
         self.frame = None
 
-        self.latency = Latency("visual")
+        self.latency = LatencyLogger("visual")
 
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
