@@ -3,10 +3,16 @@ import tifffile
 import logging
 import time
 
-from real_spike.utils.latency import LatencyLogger
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from real_spike.utils import LatencyLogger
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
 
 
 class Generator(ZmqActor):
@@ -15,8 +21,7 @@ class Generator(ZmqActor):
         self.data = None
         self.name = "Generator"
         self.frame_num = 0
-        self.latency = LatencyLogger(name="generator",
-                                     columns=["frame number", "total latency", "data fetch", "store put", "queue put"])
+        self.latency = LatencyLogger(name="generator")
 
         # specify step size, send 5 ms of data at a time
         self.sample_rate = 30_000
@@ -40,6 +45,8 @@ class Generator(ZmqActor):
         return 0
 
     def run_step(self):
+        if self.frame_num == 200:
+            return
         if self.frame_num == ((self.data.shape[1] - 1) / self.window) - 1:
             return
 
@@ -48,17 +55,11 @@ class Generator(ZmqActor):
         r_time = int((self.frame_num * self.window) + self.window)
         t = time.perf_counter_ns()
         data = self.data[:, l_time:r_time]
-        d_fetch = time.perf_counter_ns() - t
-        t2 = time.perf_counter_ns()
         data_id = self.client.put(data)
-        store_put = time.perf_counter_ns() - t2
-
         try:
-            t2 = time.perf_counter_ns()
             self.q_out.put(data_id)
-            q_put = time.perf_counter_ns() - t2
             t2 = time.perf_counter_ns()
-            self.latency.add(self.frame_num, [t2-t, d_fetch, store_put, q_put])
+            self.latency.add(self.frame_num, t2-t)
             self.frame_num += 1
 
         except Exception as e:

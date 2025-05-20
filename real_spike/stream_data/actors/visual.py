@@ -2,7 +2,12 @@ from improv.actor import ZmqActor
 import logging
 import zmq
 import time
-from real_spike.utils.latency import LatencyLogger
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from real_spike.utils import LatencyLogger
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
