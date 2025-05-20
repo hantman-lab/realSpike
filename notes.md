@@ -60,3 +60,10 @@ connections: ...
 settings: 
   - store_size = 5_000_000_000
 ```
+
+# 5/20/25
+
+- Latency issues
+  - Main issues seems to be when data is saved in the store using `zlib.compression` (increases latency of that operation to ~6-7ms)
+  - For now, manually editing the `improv.store put()` method to not compress the data
+    - later will do a PR to add `compression` as a bool flag kwarg
