@@ -18,20 +18,22 @@ def butter_filter(data, cutoff, fs, order=5, axis=-1, btype='high'):
     return y
 
 
-# get initial spike events from filtered data
-def get_spike_events(data: np.ndarray, n_deviations: int = 4) -> List[np.ndarray]:
-    """
-    Calculates the median and MAD estimator. Returns a list of indices along each channel where
-    threshold crossing is made (above absolute value of median + (n_deviations * MAD).
-    """
-    median = np.median(data, axis=1)
+def get_spike_events(data: np.ndarray, median):
+    # calculate mad
     mad = scipy.stats.median_abs_deviation(data, axis=1)
 
-    thresh = (n_deviations * mad) + median
+    # Calculate threshold
+    thresh = (4 * mad) + median
 
-    indices = [np.where(np.abs(data)[i] > thresh[i])[0] for i in range(data.shape[0])]
+    # Vectorized computation of absolute data
+    abs_data = np.abs(data)
 
-    return indices
+    # Find indices where threshold is crossed for each channel
+    spike_indices = [np.where(abs_data[i] > thresh[i])[0] for i in range(data.shape[0])]
+
+    spike_counts = [np.count_nonzero(arr) for arr in spike_indices]
+
+    return spike_indices, spike_counts
 
 
 def make_raster(ixs: List[np.ndarray]):

@@ -72,15 +72,13 @@ class Processor(ZmqActor):
             data = butter_filter(self.frame, 1000, 30_000)
 
             # get spike counts and report
-            ixs = get_spike_events(data, self.median)
-
-            if self.frame_num % 100 == 0:
+            spike_times, spike_counts = get_spike_events(data, self.median)
+            #
+            if self.frame_num % 50 == 0:
                 # sum spike events across channels
-                spike_counts = [np.count_nonzero(arr) for arr in ixs]
                 self.improv_logger.info(f"Processed frame {self.frame_num}, spike counts: {spike_counts}")
 
             # reuse data id from before
-            # data = pickle.dumps(data.tobytes(), protocol=5)
             self.client.client.set(data_id, data.tobytes(), nx=True)
 
             try:
