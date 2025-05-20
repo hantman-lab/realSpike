@@ -67,3 +67,31 @@ settings:
   - Main issues seems to be when data is saved in the store using `zlib.compression` (increases latency of that operation to ~6-7ms)
   - For now, manually editing the `improv.store put()` method to not compress the data
     - later will do a PR to add `compression` as a bool flag kwarg
+
+### Redis Tips
+
+```python
+# check the size of the store
+self.client.client.info()['used_memory_human']
+
+# check the number of keys in the store
+self.client.client.dbsize()
+
+# manually add something to the store
+self.client.client.set(data_id, data, nx=True)
+
+# delete something from the store
+self.client.client.delete(data_id)
+```
+
+### Compressing the data using `numpy`
+
+```python
+# compress data to bytes
+data = data.tobytes()
+# generate data_id
+data_id = str(os.getpid()) + str(uuid.uuid4())
+
+# decompress the data
+np.frombuffer(self.client.client.get(data_id)).reshape(384, 150)
+```
