@@ -2,6 +2,7 @@ from improv.actor import ZmqActor
 import logging
 import time
 import numpy as np
+import zmq
 
 import sys
 import os
@@ -27,6 +28,11 @@ class PatternGenerator(ZmqActor):
         # load the patterns during setup
         self.patterns = np.load(PATTERN_PATH)
 
+        # set up zmq connection to psychopy file
+        context = zmq.Context()
+        self.socket = context.socket(zmq.PUB)
+        self.socket.bind("tcp://127.0.0.1:5558")
+
         self.latency = LatencyLogger("pattern-generator")
 
         self.improv_logger.info("Completed setup for Pattern Generator")
@@ -34,6 +40,7 @@ class PatternGenerator(ZmqActor):
     def stop(self):
         self.improv_logger.info("Pattern generation stopping")
         self.latency.save()
+        self.socket.close()
         return 0
 
     def run_step(self):
@@ -55,6 +62,9 @@ class PatternGenerator(ZmqActor):
                 self.improv_logger.info(f"Pattern for frame {self.frame_num}, "
                                         f"Pattern selected: {pattern_id},"
                                         f" Pattern: {current_pattern}")
+
+            # send the pattern to psychopy
+            self.socket.send(current_pattern.ravel())
 
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)
