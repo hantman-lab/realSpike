@@ -102,3 +102,6 @@ np.frombuffer(self.client.client.get(data_id)).reshape(384, 150)
   - For now, I manually installed `psychopy` with no dependencies 
     - `pip install psychopy --no-dep`
   - In the future, will re-make a new environment with python 3.12
+- Each actor only has one `q_out`
+  - If actor needs to send two different things to two different actors, put the data in the store 
+    under different ids and send the data in the queue as a tuple (unpack appropriately in the downstream actors)
