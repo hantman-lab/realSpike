@@ -63,7 +63,9 @@ class PatternGenerator(ZmqActor):
                                         f"Pattern selected: {pattern_id},"
                                         f" Pattern: {current_pattern}")
 
-            # send the pattern to psychopy
+                # send the pattern to psychopy, only sending 1 pattern every 100 frames
+                # self.socket.send(current_pattern.ravel())
+
             self.socket.send(current_pattern.ravel())
 
             t2 = time.perf_counter_ns()

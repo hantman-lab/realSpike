@@ -31,7 +31,7 @@ setup
 3. Run the `psychopy.py` file [OPTIONAL]
 
 ```bash
-python ./real_spike/stream_data/psychopy.py
+python ./real_spike/stream_data/psychopy_viz.py
 ```
 
 **Should see output "Made connection" in terminal.**
