@@ -21,16 +21,13 @@ connections:
       - Generator.q_out
     sinks:
       - Processor.q_in
-  Processor-Visual:
+  Processor-Pattern-Visual:
     sources:
       - Processor.q_out
     sinks:
       - Visual.q_in
-  Processor-Pattern:
-    sources:
-      - Processor.q_out
-    sinks:
       - Pattern.q_in
+
 
 settings:
   store_size: 5_000_000_000

@@ -35,7 +35,7 @@ class Visual(ZmqActor):
         self.improv_logger.info("Completed setup for Visual")
 
     def stop(self):
-        self.improv_logger.info("Visual stopping")
+        self.improv_logger.info(f"Visual stopping: {self.frame_num} frames seen")
         self.socket.close()
         self.latency.save()
         return 0

@@ -15,7 +15,6 @@ logger.setLevel(logging.INFO)
 
 
 
-
 class Generator(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -48,8 +47,8 @@ class Generator(ZmqActor):
     def run_step(self):
         if self.frame_num == 5_000:
             return
-        if self.frame_num == ((self.data.shape[1] - 1) / self.window) - 1:
-            return
+        # if self.frame_num == ((self.data.shape[1] - 1) / self.window) - 1:
+        #     return
 
         # new data, send 5ms
         l_time = int(self.frame_num * self.window)

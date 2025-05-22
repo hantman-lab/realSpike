@@ -46,8 +46,7 @@ class Processor(ZmqActor):
             # really getting a data_id in here
             data_id = self.q_in.get(timeout=0.05)
         except Exception as e:
-            logger.error(f"{self.name} could not get frame! At {self.frame_num}: {e}")
-            pass
+                pass
 
         if data_id is not None and self.frame_num is not None:
             self.done = False
@@ -58,16 +57,13 @@ class Processor(ZmqActor):
             if self.frame_num < 27:
                 d = butter_filter(self.frame, 1000, 30_000)
                 self.data.append(d)
-                self.data_ids.append(data_id)
+                # self.data_ids.append(data_id)
                 self.frame_num += 1
                 return
             # use accumulated data to calculate median
             elif self.frame_num == 27:
                 self.improv_logger.info("Initialized median")
                 self.median = np.median(np.concatenate(np.array(self.data), axis=1), axis=1)
-                # delete all of the old data_ids
-                for i in self.data_ids:
-                    self.client.client.delete(i)
 
             # high pass filter
             data = butter_filter(self.frame, 1000, 30_000)
