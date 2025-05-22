@@ -38,5 +38,5 @@ class LatencyLogger:
 
     def save(self):
         """Save the dataframe to disk."""
-        self.df.to_pickle(f"./latency/{self.name}_latency_{time.strftime("%Y%m%d-%H%M%S")}.pkl")
+        self.df.to_pickle(f"./latency/{self.name}_latency.pkl")
 
