@@ -40,6 +40,8 @@ class Processor(ZmqActor):
         return 0
 
     def run_step(self):
+        if self.frame_num == 100:
+            return
         data_id = None
         t = time.perf_counter_ns()
         try:
@@ -65,9 +67,6 @@ class Processor(ZmqActor):
             elif self.frame_num == 27:
                 self.improv_logger.info("Initialized median")
                 self.median = np.median(np.concatenate(np.array(self.data), axis=1), axis=1)
-                # delete all of the old data_ids
-                for i in self.data_ids:
-                    self.client.client.delete(i)
 
             # high pass filter
             data = butter_filter(self.frame, 1000, 30_000)
