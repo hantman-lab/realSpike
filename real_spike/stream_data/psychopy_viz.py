@@ -98,5 +98,10 @@ if __name__ == "__main__":
             stim.draw()
             win.flip()
 
+            # only hold the pattern for small period
+            core.wait(0.25)
+            # Clear screen
+            win.flip()
+
     win.close()
     core.quit()

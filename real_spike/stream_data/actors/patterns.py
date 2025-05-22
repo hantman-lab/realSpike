@@ -59,14 +59,12 @@ class PatternGenerator(ZmqActor):
             current_pattern = self.patterns[pattern_id]
 
             if self.frame_num % 100 == 0:
-                self.improv_logger.info(f"Pattern for frame {self.frame_num}, "
-                                        f"Pattern selected: {pattern_id},"
-                                        f" Pattern: {current_pattern}")
+                self.improv_logger.info(f"Pattern selected: {pattern_id}")
 
                 # send the pattern to psychopy, only sending 1 pattern every 100 frames
-                # self.socket.send(current_pattern.ravel())
+                self.socket.send(current_pattern.ravel())
 
-            self.socket.send(current_pattern.ravel())
+            # self.socket.send(current_pattern.ravel())
 
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)
