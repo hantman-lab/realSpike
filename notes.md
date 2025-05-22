@@ -98,10 +98,25 @@ np.frombuffer(self.client.client.get(data_id)).reshape(384, 150)
 
 # 5/22/25
 
-- When installing `psychopy`, has version of python pinned to `<3.12`
-  - For now, I manually installed `psychopy` with no dependencies 
-    - `pip install psychopy --no-dep`
-  - In the future, will re-make a new environment with python 3.12
+## Installing `pyschopy` is painful!!
+- python pinned to `<3.12`, need environment with 3.11
+- also, installing `wxPython` on Fedora41 is painful 
+  - install using wheels from online 
+
+```bash
+# install wx python from old wheels 
+pip install https://extras.wxpython.org/wxPython4/extras/linux/gtk3/fedora-38/wxPython-4.2.1-cp311-cp311-linux_x86_64.whl
+```
+- additionally, with Fedora41 when you install one of the dependencies `libtiff`, it only has the 
+  shared object file for version 6 and the `wx` wheels are looking for version 5
+  - SOLUTION: create a symlink from version 6 so it can be found as version 5
+
+```bash
+sudo ln -s /usr/lib64/libtiff.so.6 /usr/lib64/libtiff.so.5
+sudo ldconfig
+```
+
+## Other
 - Each actor only has one `q_out`
   - If actor needs to send two different things to two different actors, put the data in the store 
     under different ids and send the data in the queue as a tuple (unpack appropriately in the downstream actors)
