@@ -25,8 +25,8 @@ connections:
     sources:
       - Processor.q_out
     sinks:
-      - Pattern.q_in
       - Visual.q_in
+      - Pattern.q_in
 
 
 settings:

@@ -40,16 +40,13 @@ class Processor(ZmqActor):
         return 0
 
     def run_step(self):
-        if self.frame_num == 100:
-            return
         data_id = None
         t = time.perf_counter_ns()
         try:
             # really getting a data_id in here
             data_id = self.q_in.get(timeout=0.05)
         except Exception as e:
-            logger.error(f"{self.name} could not get frame! At {self.frame_num}: {e}")
-            pass
+                pass
 
         if data_id is not None and self.frame_num is not None:
             self.done = False
@@ -60,7 +57,7 @@ class Processor(ZmqActor):
             if self.frame_num < 27:
                 d = butter_filter(self.frame, 1000, 30_000)
                 self.data.append(d)
-                self.data_ids.append(data_id)
+                # self.data_ids.append(data_id)
                 self.frame_num += 1
                 return
             # use accumulated data to calculate median

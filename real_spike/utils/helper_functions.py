@@ -2,6 +2,7 @@
 from typing import List
 import scipy.signal
 import numpy as np
+import tifffile
 
 
 # define filter functions
@@ -56,3 +57,12 @@ def make_raster(ixs: List[np.ndarray]):
         colors += c
 
     return spikes, np.array(colors)
+
+# TODO: hacky for now, will fix later
+def get_global_median():
+    file_path = "/home/clewis/repos/holo-nbs/rb26_20240111/raw_voltage_chunk.tif"
+    data = tifffile.memmap(file_path)
+
+    median = np.median(butter_filter(data[:, :4000], 1_000, 30_000), axis=1)
+
+    return median
