@@ -1,7 +1,8 @@
 from improv.actor import ZmqActor
 import logging
 import time
-import pickle
+import random
+import uuid
 
 import sys
 import os
@@ -74,15 +75,22 @@ class Processor(ZmqActor):
             # get spike counts and report
             spike_times, spike_counts = get_spike_events(data, self.median)
             #
-            if self.frame_num % 50 == 0:
+            if self.frame_num % 100 == 0:
                 # sum spike events across channels
                 self.improv_logger.info(f"Processed frame {self.frame_num}, spike counts: {spike_counts}")
 
             # reuse data id from before
             self.client.client.set(data_id, data.tobytes(), nx=True)
 
+            # generate a random pattern to stimulate (29 options)
+            pattern_id = random.randint(0, 28)
+            p_store_id = str(os.getpid()) + str(uuid.uuid4())
+
+            self.client.client.set(p_store_id, pattern_id.to_bytes(), nx=True)
+
             try:
-                self.q_out.put(data_id)
+                # output a tuple of keys, one for the data and one for the pattern
+                self.q_out.put((data_id, p_store_id))
                 t2 = time.perf_counter_ns()
                 self.latency.add(self.frame_num, t2 - t)
                 self.frame_num += 1

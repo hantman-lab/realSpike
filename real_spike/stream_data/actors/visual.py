@@ -44,7 +44,7 @@ class Visual(ZmqActor):
         data_id = None
         t = time.perf_counter_ns()
         try:
-            data_id = self.q_in.get(timeout=0.05)
+            data_id = self.q_in.get(timeout=0.05)[0]
         except Exception as e:
             pass
 

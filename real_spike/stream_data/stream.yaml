@@ -11,6 +11,10 @@ actors:
     package: actors.visual
     class: Visual
 
+  Pattern:
+    package: actors.patterns
+    class: PatternGenerator
+
 connections:
   Generator-Processor:
     sources:
@@ -22,6 +26,11 @@ connections:
       - Processor.q_out
     sinks:
       - Visual.q_in
+  Processor-Pattern:
+    sources:
+      - Processor.q_out
+    sinks:
+      - Pattern.q_in
 
 settings:
   store_size: 5_000_000_000
