@@ -95,3 +95,10 @@ data_id = str(os.getpid()) + str(uuid.uuid4())
 # decompress the data
 np.frombuffer(self.client.client.get(data_id)).reshape(384, 150)
 ```
+
+# 5/22/25
+
+- When installing `psychopy`, has version of python pinned to `<3.12`
+  - For now, I manually installed `psychopy` with no dependencies 
+    - `pip install psychopy --no-dep`
+  - In the future, will re-make a new environment with python 3.12

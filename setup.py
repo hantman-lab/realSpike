@@ -7,5 +7,5 @@ setup(
     author="Caitlin Lewis, Reagan Bullins",
     packages=find_packages(),
     install_requires=[],
-    python_requires=">=3.11",
+    python_requires="3.12",
 )
