@@ -78,15 +78,11 @@ class Processor(ZmqActor):
             # reuse data id from before
             self.client.client.set(data_id, data.tobytes(), nx=True)
 
-            # generate a random pattern to stimulate (29 options)
-            pattern_id = random.randint(0, 28)
-            p_store_id = str(os.getpid()) + str(uuid.uuid4())
 
-            self.client.client.set(p_store_id, pattern_id.to_bytes(), nx=True)
 
             try:
                 # output a tuple of keys, one for the data and one for the pattern
-                self.q_out.put((data_id, p_store_id))
+                self.q_out.put(data_id)
                 t2 = time.perf_counter_ns()
                 self.latency.add(self.frame_num, t2 - t)
                 self.frame_num += 1
