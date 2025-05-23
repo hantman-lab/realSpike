@@ -59,7 +59,7 @@ class PatternGenerator(ZmqActor):
             current_pattern = self.patterns[pattern_id]
 
             if self.frame_num % 100 == 0:
-                self.improv_logger.info(f"Pattern selected: {pattern_id}")
+                # self.improv_logger.info(f"Pattern selected: {pattern_id}")
 
                 # send the pattern to psychopy, only sending 1 pattern every 100 frames
                 self.socket.send(current_pattern.ravel())
