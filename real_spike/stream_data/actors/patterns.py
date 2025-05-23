@@ -33,7 +33,7 @@ class PatternGenerator(ZmqActor):
         self.socket = context.socket(zmq.PUB)
         self.socket.bind("tcp://127.0.0.1:5558")
 
-        self.latency = LatencyLogger("pattern-generator")
+        self.latency = LatencyLogger("pattern")
 
         self.improv_logger.info("Completed setup for Pattern Generator")
 
@@ -48,7 +48,7 @@ class PatternGenerator(ZmqActor):
         data_id = None
         t = time.perf_counter_ns()
         try:
-            data_id = self.q_in.get(timeout=0.05)[1]
+            data_id = self.q_in.get(timeout=0.05)
         except Exception as e:
             pass
 
@@ -59,7 +59,7 @@ class PatternGenerator(ZmqActor):
             current_pattern = self.patterns[pattern_id]
 
             if self.frame_num % 100 == 0:
-                self.improv_logger.info(f"Pattern selected: {pattern_id}")
+                # self.improv_logger.info(f"Pattern selected: {pattern_id}")
 
                 # send the pattern to psychopy, only sending 1 pattern every 100 frames
                 self.socket.send(current_pattern.ravel())
