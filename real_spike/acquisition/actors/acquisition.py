@@ -25,7 +25,7 @@ class Acquirer(ZmqActor):
         self.improv_logger.info("SpikeGLX handler created")
 
         # connect to spikeglx running on acquisition machine
-        ip_address = "192.168.0.101"
+        ip_address = "10.172.68.138"
         port = 4142
         sglx.c_sglx_connect(self.hSglx, ip_address.encode(), port)
         self.improv_logger.info("SpikeGLX connection made")

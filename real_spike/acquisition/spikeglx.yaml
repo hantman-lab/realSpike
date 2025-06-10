@@ -1,18 +1,18 @@
 actors:
-  Acquirer:
+  A:
     package: actors.acquisition
     class: Acquirer
 
-  Processor:
+  P:
     package: actors.processor
     class: Processor
 
 connections:
-  Acquirer-Processor:
+  A-P:
     sources:
-      - Acquirer.q_out
+      - A.q_out
     sinks:
-      - Processor.q_in
+      - P.q_in
 
 
 settings:
