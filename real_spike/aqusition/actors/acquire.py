@@ -1,6 +1,5 @@
 from improv.actor import ZmqActor
 import logging
-from ctypes import *
 
 import sys
 import os
@@ -10,8 +9,6 @@ from real_spike.utils import LatencyLogger
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-sglx = CDLL( "../libSglxApi.so", winmode=0 )
 
 class Acquirer(ZmqActor):
     def __int__(self, *args, **kwargs):

@@ -1,7 +1,10 @@
-from ctypes import *
 from time import time
 
-sglx = CDLL( "libSglxApi.so", winmode=0 )
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from real_spike.utils import sglx as sglx
 
 
 def connect(ip_address: str, port: int):
@@ -236,7 +239,7 @@ def fetch_data(ip_address: str, port: int, ip=0):
 
 if __name__ == "__main__":
     # practice connection
-    ip_address = "10.122.160.24"
+    ip_address = "10.172.68.138"
     port = 4142
     connect(ip_address=ip_address, port=port)
     # get initial conditions and if spikeglx is acquiring

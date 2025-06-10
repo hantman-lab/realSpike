@@ -3,9 +3,5 @@ actors:
     package: actors.acquire
     class: Acquirer
 
-  Processor:
-    package: actors.viz
-    class: Viz
-
-connections:
-  Acquirer.q_out: [Processor.q_in]
+settings:
+  store_size: 5_000_000_000
