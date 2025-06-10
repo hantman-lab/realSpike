@@ -1,6 +1,7 @@
-from sglx_pkg import sglx as sglx
-from ctypes import byref, POINTER, c_int, c_short, c_bool, c_char_p
+from ctypes import *
 from time import time
+
+sglx = CDLL( "libSglxApi.so", winmode=0 )
 
 
 def connect(ip_address: str, port: int):
@@ -235,7 +236,9 @@ def fetch_data(ip_address: str, port: int, ip=0):
 
 if __name__ == "__main__":
     # practice connection
-    connect(ip_address="192.168.0.101", port=4142)
+    ip_address = "10.122.160.24"
+    port = 4142
+    connect(ip_address=ip_address, port=port)
     # get initial conditions and if spikeglx is acquiring
     #check_inits(ip_address="192.168.0.101", port=4142)
     # get parameters
