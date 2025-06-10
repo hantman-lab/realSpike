@@ -1,10 +1,6 @@
 from time import time
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from real_spike.utils import sglx as sglx
+from real_spike.utils.sglx_pkg import sglx as sglx
 
 
 def connect(ip_address: str, port: int):

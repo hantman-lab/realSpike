@@ -5,7 +5,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from real_spike.utils import LatencyLogger
+from real_spike.utils.sglx_pkg import sglx as sglx
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -15,7 +15,6 @@ class Acquirer(ZmqActor):
         super().__init__(*args, **kwargs)
         self.data = None
         self.name = "Acquirer"
-        self.latency = LatencyLogger(name="aquirer")
 
     def __str__(self):
         return f"Name: {self.name}, Data: {self.data}"
@@ -41,7 +40,6 @@ class Acquirer(ZmqActor):
         sglx.c_sglx_close(self.hSglx)
         # destroy handle
         sglx.c_sglx_destroyHandle(self.hSglx)
-        self.latency.save()
         return 0
 
     def runStep(self):

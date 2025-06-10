@@ -1,0 +1,19 @@
+actors:
+  Acquirer:
+    package: actors.acquisition
+    class: Acquirer
+
+  Processor:
+    package: actors.processor
+    class: Processor
+
+connections:
+  Acquirer-Processor:
+    sources:
+      - Acquirer.q_out
+    sinks:
+      - Processor.q_in
+
+
+settings:
+  store_size: 5_000_000_000

@@ -1,7 +1,0 @@
-actors:
-  Acquirer:
-    package: actors.acquire
-    class: Acquirer
-
-settings:
-  store_size: 5_000_000_000

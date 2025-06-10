@@ -4,9 +4,9 @@ from sys import version_info
 from ctypes import *
 
 if version_info >= (3,8):
-    sglx = CDLL( "libSglxApi.so", winmode=0 )
+    sglx = CDLL( "/home/clewis/repos/realSpike/real_spike/utils/sglx_pkg/libSglxApi.so", winmode=0 )
 else:
-    sglx = CDLL( "libSglxApi.so" )
+    sglx = CDLL( "/home/clewis/repos/realSpike/real_spike/utils/sglx_pkg/libSglxApi.so" )
 
 
 # Usage ------------------
