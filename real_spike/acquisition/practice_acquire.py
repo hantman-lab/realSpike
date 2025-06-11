@@ -1,4 +1,5 @@
 from time import time
+from ctypes import *
 
 from real_spike.utils.sglx_pkg import sglx as sglx
 
@@ -224,7 +225,7 @@ def fetch_data(ip_address: str, port: int, ip=0):
 
             print(data.value)
         elif fromCt == 0:
-            print("fromCt is 0, check if aquisition is set up properly")
+            print("fromCt is 0, check if acquisition is set up properly")
 
     if not ok:
         print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
@@ -249,4 +250,4 @@ if __name__ == "__main__":
     # get imec probe params for a given probe
     #get_imec_params(ip_address="192.168.0.101", port=4142, ip=3)
     # fetch data
-    #fetch_data(ip_address="192.168.0.101", port=4142, ip=3)
+    fetch_data(ip_address=ip_address, port=4142, ip=3)
