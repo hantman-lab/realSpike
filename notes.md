@@ -116,7 +116,11 @@ sudo ln -s /usr/lib64/libtiff.so.6 /usr/lib64/libtiff.so.5
 sudo ldconfig
 ```
 
-## Other
-- Each actor only has one `q_out`
-  - If actor needs to send two different things to two different actors, put the data in the store 
-    under different ids and send the data in the queue as a tuple (unpack appropriately in the downstream actors)
+
+# 6/10/25
+
+Connecting to SpikeGLX over Duke's network from my local machine to a Windows machine.
+
+### Need to connect both of the machines to the Duke VPN `vpn.duke.edu`
+### Make sure to enable remote command server settings in the `SpikeGLX` "Options" menu
+### Need to copy the entire `sglx_pkg` after making the `.so` file in the SDK
