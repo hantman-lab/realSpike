@@ -1,12 +1,11 @@
-from time import time
 from ctypes import *
 
 from real_spike.utils.sglx_pkg import sglx as sglx
 
 
 def connect(ip_address: str, port: int):
-    """Check that connection can be made to SpikeGLX running on acquisition machine."""
-    print("Calling connect...\n\n")
+    """Check that a connection can be made to SpikeGLX running on an acquisition machine."""
+    print("Calling connect...\n")
     hSglx = sglx.c_sglx_createHandle()
 
     if sglx.c_sglx_connect(hSglx, ip_address.encode(), port):
@@ -19,7 +18,7 @@ def connect(ip_address: str, port: int):
     sglx.c_sglx_destroyHandle(hSglx)
 
 
-def check_inits(ip_address: str, port: int):
+def check_initialization(ip_address: str, port: int):
     """
     Check initial conditions of SpikeGLX before attempting to fetch.
 
@@ -59,12 +58,11 @@ def check_inits(ip_address: str, port: int):
 
 def get_params(ip_address: str, port: int):
     """Gets the most recent run parameters used for SpikeGLX."""
-    print("Get params...")
+    print("Getting params...")
     hSglx = sglx.c_sglx_createHandle()
     ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
 
     if ok:
-        print("Successfully connected to SpikeGLX")
         nval = c_int()
         len = c_int()
         ok = sglx.c_sglx_getParams(byref(nval), hSglx)
@@ -120,7 +118,6 @@ def get_probes(ip_address: str, port: int):
         list = c_char_p()
         ok = sglx.c_sglx_getProbeList(byref(list), hSglx)
         if ok:
-            #print(sglx.c_sglx_getstr(list))
             print(list.value)
     if not ok:
         print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
@@ -155,99 +152,28 @@ def get_imec_params(ip_address: str, port: int, ip=0):
     sglx.c_sglx_destroyHandle(hSglx)
 
 
-def fetch_data(ip_address: str, port: int, ip=0):
-    """
-    Fetching data.
-
-    Currently, get the number of available channels for the specified probe and
-    then attempts to fetch for a given sample length.
-    """
+def console_test(ip_address: str, port: int):
+    print( "Console test...\n" )
     hSglx = sglx.c_sglx_createHandle()
-    ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
+    ok    = sglx.c_sglx_connect( hSglx, ip_address.encode(), port )
 
     if ok:
-        js = 2
-        data = POINTER(c_short)()
-        ndata = c_int()
-
-        # first get the number of channels for a given probe
-        nval = c_int()
-        ok = sglx.c_sglx_getStreamAcqChans(byref(nval), hSglx, js, ip)
-
+        hid = c_bool()
+        ok  = sglx.c_sglx_isConsoleHidden( byref(hid), hSglx )
         if ok:
-            num_chan = sglx.c_sglx_getint(nval)
-            print(f"Number of channels available for probe {ip} = {num_chan}")
-
-        if not ok:
-            print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
-            sglx.c_sglx_close(hSglx)
-            sglx.c_sglx_destroyHandle(hSglx)
-            return
-
-        # collect from channels on the probe given by getStreamAcqChans
-        py_chans = [i for i in range(num_chan)]
-
-        # number of channels getting data from
-        n_cs = len(py_chans)
-
-        # channel_subset is an array of specific channels to fetch, optionally,
-        #      -1 = all acquired channels, or,
-        #      -2 = all saved channels.
-        channel_subset = (c_int * n_cs)(*py_chans)
-
-        # downsample = every nth sample
-        downsample = 1
-
-        # get number of samples since current run started
-        # use as start sample
-        fromCt = sglx.c_sglx_getStreamSampleCount(hSglx, js, ip)
-        print(f"fromCt = {fromCt}")
-
-        # max_samps = max # of samples to aquire
-        max_samps = 120
-
-        if fromCt > 0:
-            # get time it takes to fetch
-            t = time()
-            headCt = sglx.c_sglx_fetch(byref(data), byref(ndata), hSglx, js, ip, int(fromCt), max_samps, channel_subset,
-                                       n_cs, downsample)
-            print(time() - t)
-
-            # looks like fetchLatest takes the same params except doesn't use max_samps, will just fetch one time
-            #headCt = sglx.c_sglx_fetchLatest(byref(data), byref(ndata), hSglx, js, ip, int(fromCt), channel_subset,
-                                     #  n_cs, downsample)
-
-            if headCt == 0:
-                print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
-                sglx.c_sglx_close(hSglx)
-                sglx.c_sglx_destroyHandle(hSglx)
-                return
-
-            print(data.value)
-        elif fromCt == 0:
-            print("fromCt is 0, check if acquisition is set up properly")
+            print( "Console hidden: {}\n".format( bool(hid) ) )
 
     if not ok:
-        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+        print( "error [{}]\n".format( sglx.c_sglx_getError( hSglx ) ) )
 
-    sglx.c_sglx_close(hSglx)
-    sglx.c_sglx_destroyHandle(hSglx)
+    sglx.c_sglx_close( hSglx )
+    sglx.c_sglx_destroyHandle( hSglx )
 
 
 if __name__ == "__main__":
     # practice connection
-    ip_address = "10.172.68.138"
+    ip_address = "10.172.16.169"
     port = 4142
-    connect(ip_address=ip_address, port=port)
-    # get initial conditions and if spikeglx is acquiring
-    #check_inits(ip_address="192.168.0.101", port=4142)
-    # get parameters
-    #get_params(ip_address="192.168.0.101", port=4142)
-    # get the main data_dir
-    #get_datadir(ip_address="192.168.0.101", port=4142)
-    # get probes
-    #get_probes(ip_address="192.168.0.101", port=4142)
-    # get imec probe params for a given probe
-    #get_imec_params(ip_address="192.168.0.101", port=4142, ip=3)
-    # fetch data
-    fetch_data(ip_address=ip_address, port=4142, ip=3)
+    console_test(ip_address=ip_address, port=port)
+    check_initialization(ip_address=ip_address, port=port)
+    get_datadir(ip_address=ip_address, port=port)
