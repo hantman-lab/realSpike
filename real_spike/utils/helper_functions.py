@@ -3,6 +3,7 @@ from typing import List
 import scipy.signal
 import numpy as np
 import tifffile
+import zmq
 
 
 # define filter functions
@@ -37,7 +38,7 @@ def get_spike_events(data: np.ndarray, median):
     return spike_indices, spike_counts
 
 
-def make_raster(ixs: List[np.ndarray]):
+def make_raster(ixs, COLORS):
     """
     Takes a list of threshold crossings and returns a list of points (channel number, spike time) and colors.
     Used to make a raster plot.
@@ -45,15 +46,15 @@ def make_raster(ixs: List[np.ndarray]):
     spikes = list()
 
     for i, ix in enumerate(ixs):
-        ys = np.full(ix.shape, i * 2)
+        ys = np.full(ix.shape, i * 90)
         sp = np.vstack([ix, ys]).T
         spikes.append(sp)
 
     colors = list()
 
-    for i in spikes:
+    for j, i in enumerate(spikes):
         # randomly select a color
-        c = [np.append(np.random.rand(3), 1)] * len(i)
+        c = [COLORS[j]] * len(i)
         colors += c
 
     return spikes, np.array(colors)
@@ -66,3 +67,35 @@ def get_global_median():
     median = np.median(butter_filter(data[:, :4000], 1_000, 30_000), axis=1)
 
     return median
+
+def get_buffer(sub):
+    """Gets the buffer from the publisher."""
+    try:
+        b = sub.recv(zmq.NOBLOCK)
+    except zmq.Again:
+        pass
+    else:
+        return b
+
+    return None
+
+def connect(port_number: int = 5558):
+    """
+    Connect to the pattern generator actor via zmq. Make sure that ports match and are different from visual
+    actor ports.
+    """
+    context = zmq.Context()
+    sub = context.socket(zmq.SUB)
+    sub.setsockopt(zmq.SUBSCRIBE, b"")
+
+    # keep only the most recent message
+    sub.setsockopt(zmq.CONFLATE, 1)
+
+    # TODO: add in check to make sure specified port number is valid
+
+    # address must match publisher in actor
+    sub.connect(f"tcp://127.0.0.1:{port_number}")
+
+    print(f"Made connection on port {port_number}")
+
+    return sub
