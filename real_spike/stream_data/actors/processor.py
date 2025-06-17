@@ -67,7 +67,6 @@ class Processor(ZmqActor):
 
             # high pass filter
             data = butter_filter(self.frame, 1000, 30_000)
-            self.improv_logger.info(f"Processed frame {self.frame_num}, {data[0][0]}")
 
             # get spike counts and report
             spike_times, spike_counts = get_spike_events(data, self.median)

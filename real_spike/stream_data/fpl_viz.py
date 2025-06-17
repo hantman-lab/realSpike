@@ -59,7 +59,7 @@ def update():
         lg = figure["filtered spikes"].add_line_stack(data,
                                                       colors="gray",
                                                       thickness=0.5,
-                                                      separation=36,
+                                                      separation=35,
                                                       name="lg")
     # shift left 1ms and add new chunk
     else:
