@@ -1,5 +1,10 @@
 import fastplotlib as fpl
 import queue
+import pickle
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from real_spike.utils import *
 
@@ -36,6 +41,7 @@ for subplot in figure:
     subplot.camera.maintain_aspect = False
 
 "----------------------------------------------------------------------------------------------------------------------"
+SAVED = False
 
 def update():
     """Function to actual update the figure."""
@@ -78,22 +84,24 @@ def update():
     # get the spike times
     ixs, _ = get_spike_events(data, median)
 
-    # make a raster plot using the pre-defined channel colors
-    spikes, colors = make_raster(ixs, COLORS)
-    spikes = np.concatenate(spikes)
 
     # color each spike event orange
     for i in range(len(ixs)):
         if ixs[i].shape[0] == 0:
             continue
-
         lg[i].colors[ixs[i]] = "orange"
+
+    # make a raster plot using the pre-defined channel colors
+    spikes, colors = make_raster(ixs, COLORS)
+    spikes = np.concatenate(spikes)
 
     # clear the old raster plot
     figure["raster"].clear()
 
     # add new raster
     figure["raster"].add_scatter(spikes, sizes=3, colors=colors)
+
+
 
 def update_figure(p):
     """Fetch the data from the socket, deserialize it, and put it in the queue for visualization."""

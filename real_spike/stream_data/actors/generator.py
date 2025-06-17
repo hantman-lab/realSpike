@@ -3,6 +3,7 @@ import tifffile
 import logging
 import time
 import uuid
+import numpy as np
 
 import sys
 import os
@@ -54,7 +55,7 @@ class Generator(ZmqActor):
         l_time = int(self.frame_num * self.window)
         r_time = int((self.frame_num * self.window) + self.window)
         t = time.perf_counter_ns()
-        data = self.data[:, l_time:r_time].tobytes()
+        data = self.data[:, l_time:r_time].astype(np.float64).tobytes()
         data_id = str(os.getpid()) + str(uuid.uuid4())
         self.client.client.set(data_id, data, nx=True)
         try:
