@@ -120,3 +120,13 @@ sudo ldconfig
 - Each actor only has one `q_out`
   - If actor needs to send two different things to two different actors, put the data in the store 
     under different ids and send the data in the queue as a tuple (unpack appropriately in the downstream actors)
+
+# 6/17/2025
+
+- Redis store setting the data at a particular `key`, keyword argument `nx` specifies whether the data at a particular `key`, if it exists, can be overwritten or not
+  - If trying to reuse key, need to specify `nx=False`
+ 
+# 6/18/2025
+- Working with a windows machine (bleh)
+  - activating a venv: `./venvs/bah/Scripts/Activate.ps1`
+- Weird certification error when trying to install things with `pip`:  `pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org <package_name>`
