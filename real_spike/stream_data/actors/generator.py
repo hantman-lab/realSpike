@@ -22,7 +22,7 @@ class Generator(ZmqActor):
         self.data = None
         self.name = "Generator"
         self.frame_num = 0
-        self.latency = LatencyLogger(name="generator")
+        self.latency = LatencyLogger(name="generator_stream")
 
         # specify step size, send 5 ms of data at a time
         self.sample_rate = 30_000

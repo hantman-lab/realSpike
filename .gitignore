@@ -13,3 +13,5 @@
 /latency
 
 realSpike.egg-info/
+
+analog_data.npy
