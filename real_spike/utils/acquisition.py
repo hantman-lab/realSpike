@@ -27,6 +27,10 @@ def get_meta(hSglx):
         # print("{}".format(kv.items()))
     return kv
 
+def validation_voltage(data):
+    ground_truth = np.load("/home/clewis/repos/realSpike/ground_truth_voltage.npy")
+    return np.alltrue(data == ground_truth)
+
 def get_debug_meta():
     with open("/home/clewis/repos/realSpike/meta.pkl", "rb") as f:
         meta = pickle.load(f)
