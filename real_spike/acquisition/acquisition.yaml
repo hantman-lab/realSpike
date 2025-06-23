@@ -13,3 +13,6 @@ connections:
       - Generator.q_out
     sinks:
       - Processor.q_in
+
+settings:
+  store_size: 5_000_000_000

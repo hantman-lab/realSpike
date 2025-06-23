@@ -30,7 +30,7 @@ class Processor(ZmqActor):
         self.data = list()
         self.data_ids = list()
 
-        self.latency = LatencyLogger("processor")
+        self.latency = LatencyLogger("processor_stream")
         self.improv_logger.info("Completed setup for Processor")
 
     def stop(self):

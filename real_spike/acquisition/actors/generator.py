@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from real_spike.utils import LatencyLogger, fetch, get_meta
+from real_spike.utils import LatencyLogger, fetch, get_meta, GainCorrectIM, get_debug_meta
 from real_spike.utils.sglx_pkg import sglx as sglx
 
 logger = logging.getLogger(__name__)
@@ -47,6 +47,8 @@ class Generator(ZmqActor):
             else:
                 self.improv_logger.info("error [{}]\n".format(sglx.c_sglx_getError(self.hSglx)))
                 raise Exception
+        else:
+            self.meta_data = get_debug_meta()
 
         self.improv_logger.info("Completed setup for Generator")
 
@@ -61,6 +63,8 @@ class Generator(ZmqActor):
         return 0
 
     def run_step(self):
+        if self.frame_num > 1_000:
+            return
         if DEBUG_MODE:
             # use fake fetch function
             t = time.perf_counter_ns()
@@ -68,13 +72,15 @@ class Generator(ZmqActor):
         else:
             # fetch using sglx handler
             t = time.perf_counter_ns()
-            data = self.hSglx.fetch()
+            # data = self.hSglx.fetch()
+            data = 0
 
         # convert the data from analog to voltage
+        data = 1e6 * GainCorrectIM(data, self.meta_data)
 
         # send to processor
         data_id = str(os.getpid()) + str(uuid.uuid4())
-        self.client.client.set(data_id, data, nx=True)
+        self.client.client.set(data_id, data.tobytes(), nx=True)
         try:
             self.q_out.put(data_id)
             t2 = time.perf_counter_ns()
