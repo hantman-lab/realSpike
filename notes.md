@@ -116,7 +116,6 @@ sudo ln -s /usr/lib64/libtiff.so.6 /usr/lib64/libtiff.so.5
 sudo ldconfig
 ```
 
-
 # 6/10/25
 
 Connecting to SpikeGLX over Duke's network from my local machine to a Windows machine.
@@ -124,3 +123,16 @@ Connecting to SpikeGLX over Duke's network from my local machine to a Windows ma
 ### Need to connect both of the machines to the Duke VPN `vpn.duke.edu`
 ### Make sure to enable remote command server settings in the `SpikeGLX` "Options" menu
 ### Need to copy the entire `sglx_pkg` after making the `.so` file in the SDK
+
+
+# 6/17/2025
+
+- Redis store setting the data at a particular `key`, keyword argument `nx` specifies whether the data at a particular `key`, if it exists, can be overwritten or not
+  - If trying to reuse key, need to specify `nx=False`
+ 
+ 
+# 6/18/2025
+- Working with a windows machine (bleh)
+  - activating a venv: `./venvs/bah/Scripts/Activate.ps1`
+- Weird certification error when trying to install things with `pip`:  `pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org <package_name>`
+
