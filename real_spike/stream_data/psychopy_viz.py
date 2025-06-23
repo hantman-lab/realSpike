@@ -11,6 +11,7 @@ SOCKET_OPEN = True
 def monitor_socket(monitor):
     """Monitors the socket sets global bool when socket has closed."""
     global SOCKET_OPEN
+    print("Monitoring socket...")
 
     while True:
         try:
@@ -27,7 +28,12 @@ def monitor_socket(monitor):
 
 if __name__ == "__main__":
     # connect to port to listen on
-    sub = connect()
+    address = "10.172.17.107"
+    port = 5559
+    context = zmq.Context()
+    sub = context.socket(zmq.PULL)
+    sub.connect(f"tcp://{address}:{port}")
+    print(f"Connected socket to address {address} on port {port}")
 
     # Setup monitoring on the socket
     monitor = sub.get_monitor_socket()
