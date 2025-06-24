@@ -50,7 +50,7 @@ class Visual(ZmqActor):
 
         if data_id is not None:
             self.done = False
-            self.frame = np.frombuffer(self.client.client.get(data_id)).reshape(384, 150)
+            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(384, 150)
 
             self.socket.send(self.frame.ravel())
             t2 = time.perf_counter_ns()

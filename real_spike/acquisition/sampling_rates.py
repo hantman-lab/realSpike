@@ -1,6 +1,6 @@
 """Test latency at different sampling rates."""
 
-from sglx_pkg import sglx as sglx
+from real_spike.utils.sglx_pkg import sglx as sglx
 from ctypes import byref, POINTER, c_int, c_short, c_bool, c_char_p
 from time import time
 import pandas as pd

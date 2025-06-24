@@ -13,3 +13,7 @@
 /latency
 
 realSpike.egg-info/
+
+analog_data.npy
+meta.pkl
+ground_truth_voltage.npy

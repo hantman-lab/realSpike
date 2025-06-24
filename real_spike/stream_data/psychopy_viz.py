@@ -1,37 +1,17 @@
 from psychopy import visual, core
-import numpy as np
 import threading
-import zmq
 import zmq.utils.monitor as m
 
+from real_spike.utils import *
+
 SOCKET_OPEN = True
-
-def connect(port_number: int = 5558):
-    """
-    Connect to the pattern generator actor via zmq. Make sure that ports match and are different from visual
-    actor ports.
-    """
-    context = zmq.Context()
-    sub = context.socket(zmq.SUB)
-    sub.setsockopt(zmq.SUBSCRIBE, b"")
-
-    # keep only the most recent message
-    sub.setsockopt(zmq.CONFLATE, 1)
-
-    # TODO: add in check to make sure specified port number is valid
-
-    # address must match publisher in actor
-    sub.connect(f"tcp://127.0.0.1:{port_number}")
-
-    print(f"Made connection on port {port_number}")
-
-    return sub
 
 
 # mostly for stopping the process when "stop" is called in the TUI
 def monitor_socket(monitor):
     """Monitors the socket sets global bool when socket has closed."""
     global SOCKET_OPEN
+    print("Monitoring socket...")
 
     while True:
         try:
@@ -46,22 +26,14 @@ def monitor_socket(monitor):
             break
 
 
-def get_buffer(sub):
-    """Gets the buffer from the publisher."""
-    try:
-        b = sub.recv(zmq.NOBLOCK)
-    except zmq.Again:
-        pass
-    else:
-        return b
-
-    return None
-
-
-
 if __name__ == "__main__":
     # connect to port to listen on
-    sub = connect()
+    address = "10.172.17.107"
+    port = 5559
+    context = zmq.Context()
+    sub = context.socket(zmq.PULL)
+    sub.connect(f"tcp://{address}:{port}")
+    print(f"Connected socket to address {address} on port {port}")
 
     # Setup monitoring on the socket
     monitor = sub.get_monitor_socket()

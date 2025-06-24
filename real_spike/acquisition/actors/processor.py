@@ -1,8 +1,7 @@
 from improv.actor import ZmqActor
 import logging
 import time
-import random
-import uuid
+
 
 import sys
 import os
@@ -25,12 +24,11 @@ class Processor(ZmqActor):
             self.name = "Processor"
         self.frame = None
         self.frame_num = 1
-        # initialize median with first 4 seconds of data (26 frames)
-        self.median = None
         self.data = list()
-        self.data_ids = list()
 
-        self.latency = LatencyLogger("processor_stream")
+        self.num_channels = 384
+
+        self.latency = LatencyLogger("processor_acquisition")
         self.improv_logger.info("Completed setup for Processor")
 
     def stop(self):
@@ -46,12 +44,12 @@ class Processor(ZmqActor):
             # really getting a data_id in here
             data_id = self.q_in.get(timeout=0.05)
         except Exception as e:
-                pass
+            pass
 
         if data_id is not None and self.frame_num is not None:
             self.done = False
 
-            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(384, 150)
+            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(self.num_channels, 150)
 
             # accumulate 4 seconds of data
             if self.frame_num < 27:
@@ -64,6 +62,8 @@ class Processor(ZmqActor):
             elif self.frame_num == 27:
                 self.improv_logger.info("Initialized median")
                 self.median = np.median(np.concatenate(np.array(self.data), axis=1), axis=1)
+                self.frame_num += 1
+                return
 
             # high pass filter
             data = butter_filter(self.frame, 1000, 30_000)
@@ -80,10 +80,11 @@ class Processor(ZmqActor):
 
             try:
                 # output the data
-                self.q_out.put(data_id)
+                # self.q_out.put(data_id)
                 t2 = time.perf_counter_ns()
                 self.latency.add(self.frame_num, t2 - t)
                 self.frame_num += 1
+                self.client.client.delete(data_id)
 
             except Exception as e:
                 self.improv_logger.error(f"Processor Exception: {e}")
