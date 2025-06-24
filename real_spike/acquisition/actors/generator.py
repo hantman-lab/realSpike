@@ -2,12 +2,14 @@ from improv.actor import ZmqActor
 import logging
 import time
 import uuid
+import numpy as np
+import random
 
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from real_spike.utils import LatencyLogger, fetch, get_meta, GainCorrectIM, get_debug_meta
+from real_spike.utils import LatencyLogger, get_meta, GainCorrectIM, get_debug_meta
 from real_spike.utils.sglx_pkg import sglx as sglx
 
 logger = logging.getLogger(__name__)
@@ -48,6 +50,7 @@ class Generator(ZmqActor):
                 self.improv_logger.info("error [{}]\n".format(sglx.c_sglx_getError(self.hSglx)))
                 raise Exception
         else:
+            self.sample_data = np.load("/home/clewis/repos/realSpike/analog_data.npy")
             self.meta_data = get_debug_meta()
 
         self.improv_logger.info("Completed setup for Generator")
@@ -62,13 +65,21 @@ class Generator(ZmqActor):
         self.latency.save()
         return 0
 
+    def fetch(self):
+        """Return 5ms of analog data stored on disk."""
+        # TODO: reformat this data so it will be how it comes off when you call fetchLatest
+        i = random.randint(0, self.sample_data.shape[1] - 151)
+        return self.sample_data[:120, i:i + 150]
+
     def run_step(self):
+        if self.frame_num == 1000:
+            self.improv_logger.info(f"1000 frames")
         if self.frame_num > 1_000:
             return
         if DEBUG_MODE:
             # use fake fetch function
             t = time.perf_counter_ns()
-            data = fetch()
+            data = self.fetch()
         else:
             # fetch using sglx handler
             t = time.perf_counter_ns()
@@ -76,7 +87,8 @@ class Generator(ZmqActor):
             data = 0
 
         # convert the data from analog to voltage
-        data = 1e6 * GainCorrectIM(data, self.meta_data)
+        chanList = list(range(0, 384))
+        data = 1e6 * GainCorrectIM(data, self.meta_data, chanList)
 
         # send to processor
         data_id = str(os.getpid()) + str(uuid.uuid4())

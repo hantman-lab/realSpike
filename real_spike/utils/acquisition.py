@@ -3,14 +3,7 @@ from .sglx_pkg import sglx
 
 import numpy as np
 import pickle
-import random
-
-def fetch():
-    """Return 5ms of analog data stored on disk."""
-    data = np.load("/home/clewis/repos/realSpike/analog_data.npy")
-    # TODO: reformat this data so it will be how it comes off when you call fetchLatest
-    i = random.randint(0, data.shape[1] - 151)
-    return data[:, i:i+150]
+from typing import List, Dict
 
 
 def get_meta(hSglx):
@@ -37,6 +30,7 @@ def get_debug_meta():
     return meta
 
 def OriginalChans(meta):
+    """Returns the channels that were saved from that particular run."""
     if meta['snsSaveChanSubset'] == 'all':
         # output = int32, 0 to nSavedChans - 1
         chans = np.arange(0, int(meta['nSavedChans']))
@@ -54,7 +48,7 @@ def OriginalChans(meta):
             else:
                 newChans = np.arange(int(currList[0]), int(currList[0])+1)
             chans = np.append(chans, newChans)
-    return(chans)
+    return chans
 
 
 def ChanGainsIM(meta):
@@ -92,9 +86,9 @@ def Int2Volts(meta):
     return fI2V
 
 
-def GainCorrectIM(dataArray, meta):
+def GainCorrectIM(data: np.ndarray, meta: Dict[str], channel_list: List[int]):
+    """Gain correction for an imec probe."""
     # Look up gain with acquired channel ID
-    chanList = list(range(0,384))
     chans = OriginalChans(meta)
     APgain, LFgain = ChanGainsIM(meta)
     nAP = len(APgain)
@@ -105,9 +99,9 @@ def GainCorrectIM(dataArray, meta):
 
     # make array of floats to return. dataArray contains only the channels
     # in chanList, so output matches that shape
-    convArray = np.zeros(dataArray.shape, dtype='float')
-    for i in range(0, len(chanList)):
-        j = chanList[i]     # index into timepoint
+    convArray = np.zeros(data.shape, dtype='float')
+    for i in range(0, len(channel_list)):
+        j = channel_list[i]     # index into timepoint
         k = chans[j]        # acquisition index
         if k < nAP:
             conv = fI2V / APgain[k]
@@ -116,5 +110,5 @@ def GainCorrectIM(dataArray, meta):
         else:
             conv = 1
         # The dataArray contains only the channels in chanList
-        convArray[i, :] = dataArray[i, :]*conv
-    return(convArray)
+        convArray[i, :] = data[i, :] * conv
+    return convArray
