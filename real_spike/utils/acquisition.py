@@ -29,54 +29,58 @@ def get_debug_meta():
         meta = pickle.load(f)
     return meta
 
-def OriginalChans(meta):
+def get_channels(meta_data: Dict[str, str]):
     """Returns the channels that were saved from that particular run."""
-    if meta['snsSaveChanSubset'] == 'all':
+    if meta_data['snsSaveChanSubset'] == 'all':
         # output = int32, 0 to nSavedChans - 1
-        chans = np.arange(0, int(meta['nSavedChans']))
-    else:
-        # parse the snsSaveChanSubset string
-        # split at commas
-        chStrList = meta['snsSaveChanSubset'].split(sep=',')
-        chans = np.arange(0, 0)  # creates an empty array of int32
-        for sL in chStrList:
-            currList = sL.split(sep=':')
-            if len(currList) > 1:
-                # each set of contiguous channels specified by
-                # chan1:chan2 inclusive
-                newChans = np.arange(int(currList[0]), int(currList[1])+1)
-            else:
-                newChans = np.arange(int(currList[0]), int(currList[0])+1)
-            chans = np.append(chans, newChans)
-    return chans
+        return np.arange(int(meta_data['nSavedChans']), dtype=np.int32)
+
+    channel_list = list()
+    # parse the snsSaveChanSubset string
+    # split at commas
+    for clist in  meta_data['snsSaveChanSubset'].split(sep=','):
+        # split each sublist at colon
+        ixs = clist.split(sep=':')
+        if len(ixs) > 1:
+            # each set of contiguous channels specified by
+            # chan1:chan2 inclusive
+            channel_list.append(np.arange(int(ixs[0]), int(ixs[1])+1))
+        else:
+            # only one channel listed
+            channel_list.append(np.arange(int(ixs[0]), int(ixs[0])+1))
+    return np.concatenate(channel_list)
 
 
-def ChanGainsIM(meta):
+def get_channel_gain(meta_data: Dict[str, str]):
+    """Returns the AP gain correction for each channel."""
     # list of probe types with NP 1.0 imro format
     # np1_imro = [0,1020,1030,1200,1100,1120,1121,1122,1123,1300]
-    # number of channels acquired
-    acqCountList = meta['acqApLfSy'].split(sep=',')
-    APgain = np.zeros(int(acqCountList[0]))  # default type = float64
-    LFgain = np.zeros(int(acqCountList[1]))  # empty array for 2.0
 
-    if 'imDatPrb_type' in meta:
-        probeType = int(meta['imDatPrb_type'])
-    else:
-        probeType = 0
+    # number of channels acquired for each AP, LF, Sy
+    acquire_counts = meta_data['acqApLfSy'].split(sep=',')
+    # only need the first entry because we only care about AP correction
+    APgain = np.zeros(int(acquire_counts[0]))  # default type = float64
+
+    # if 'imDatPrb_type' in meta_data:
+    #     probeType = int(meta_data['imDatPrb_type'])
+    # else:
+    #     probeType = 0
 
     # imro + probe allows setting gain independently for each channel
-    imroList = meta['imroTbl'].split(sep=')')
     # One entry for each channel plus header entry,
     # plus a final empty entry following the last ')'
-    for i in range(0, int(acqCountList[0])):
-        currList = imroList[i + 1].split(sep=' ')
-        APgain[i] = float(currList[3])
-        LFgain[i] = float(currList[4])
+    # TODO: is gain for each channel always constant?
+    #  If so, can simply check the first any move on (i.e. could all be 500)
+    imro = meta_data['imroTbl'].split(sep=')')[1:-1]
 
-    return (APgain, LFgain)
+    for i in range(0, int(acquire_counts[0])):
+        entry = imro[i].split(sep=' ')
+        APgain[i] = float(entry[3])
+
+    return APgain
 
 
-def Int2Volts(meta):
+def int2_volts(meta):
     if 'imMaxInt' in meta:
         maxInt = int(meta['imMaxInt'])
     else:
@@ -86,27 +90,27 @@ def Int2Volts(meta):
     return fI2V
 
 
-def GainCorrectIM(data: np.ndarray, meta: Dict[str], channel_list: List[int]):
+def gain_correction(data: np.ndarray, meta_data: Dict[str, str], channel_list: List[int]):
     """Gain correction for an imec probe."""
     # Look up gain with acquired channel ID
-    chans = OriginalChans(meta)
-    APgain, LFgain = ChanGainsIM(meta)
+    chans = get_channels(meta_data)
+    APgain = get_channel_gain(meta_data)
     nAP = len(APgain)
-    nNu = nAP * 2
+    # nNu = nAP * 2
 
     # Common conversion factor
-    fI2V = Int2Volts(meta)
+    fI2V = int2_volts(meta_data)
 
     # make array of floats to return. dataArray contains only the channels
     # in chanList, so output matches that shape
     convArray = np.zeros(data.shape, dtype='float')
-    for i in range(0, len(channel_list)):
-        j = channel_list[i]     # index into timepoint
-        k = chans[j]        # acquisition index
-        if k < nAP:
+    for i in range(len(channel_list)):
+        j = channel_list[i]     # get channel ix
+        k = chans[j]        # get the channel
+        if k < nAP: # make sure it is not nidaq channel
             conv = fI2V / APgain[k]
-        elif k < nNu:
-            conv = fI2V / LFgain[k - nAP]
+        # elif k < nNu:
+        #     conv = fI2V / LFgain[k - nAP]
         else:
             conv = 1
         # The dataArray contains only the channels in chanList

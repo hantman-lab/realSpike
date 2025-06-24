@@ -26,6 +26,8 @@ class Processor(ZmqActor):
         self.frame_num = 1
         self.data = list()
 
+        self.num_channels = 384
+
         self.latency = LatencyLogger("processor_acquisition")
         self.improv_logger.info("Completed setup for Processor")
 
@@ -47,7 +49,7 @@ class Processor(ZmqActor):
         if data_id is not None and self.frame_num is not None:
             self.done = False
 
-            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(384, 150)
+            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(self.num_channels, 150)
 
             # accumulate 4 seconds of data
             if self.frame_num < 27:

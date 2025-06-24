@@ -9,7 +9,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from real_spike.utils import LatencyLogger, get_meta, GainCorrectIM, get_debug_meta
+from real_spike.utils import LatencyLogger, get_meta, gain_correction, get_debug_meta
 from real_spike.utils.sglx_pkg import sglx as sglx
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,8 @@ class Generator(ZmqActor):
         self.name = "Generator"
         self.frame_num = 0
         self.latency = LatencyLogger(name="generator_acquisition")
+
+        self.num_channels = 384
 
 
     def __str__(self):
@@ -53,6 +55,13 @@ class Generator(ZmqActor):
             self.sample_data = np.load("/home/clewis/repos/realSpike/analog_data.npy")
             self.meta_data = get_debug_meta()
 
+        # get Vmax
+        self.Vmax = float(self.meta_data["imAiRangeMax"])
+        # get Imax
+        self.Imax = float(self.meta_data["imMaxInt"])
+        # get gain
+        self.gain = float(self.meta_data['imroTbl'].split(sep=')')[1].split(sep=' ')[3])
+
         self.improv_logger.info("Completed setup for Generator")
 
     def stop(self):
@@ -69,7 +78,7 @@ class Generator(ZmqActor):
         """Return 5ms of analog data stored on disk."""
         # TODO: reformat this data so it will be how it comes off when you call fetchLatest
         i = random.randint(0, self.sample_data.shape[1] - 151)
-        return self.sample_data[:120, i:i + 150]
+        return self.sample_data[:self.num_channels, i:i + 150].ravel()
 
     def run_step(self):
         if self.frame_num == 1000:
@@ -87,8 +96,8 @@ class Generator(ZmqActor):
             data = 0
 
         # convert the data from analog to voltage
-        chanList = list(range(0, 384))
-        data = 1e6 * GainCorrectIM(data, self.meta_data, chanList)
+        data = 1e6 * data * self.Vmax / self.Imax / self.gain
+        data = data.reshape(self.num_channels, 150)
 
         # send to processor
         data_id = str(os.getpid()) + str(uuid.uuid4())
