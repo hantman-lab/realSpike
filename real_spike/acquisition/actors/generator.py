@@ -9,7 +9,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from real_spike.utils import LatencyLogger, get_meta, gain_correction, get_debug_meta
+from real_spike.utils import LatencyLogger, get_vmax, get_imax, get_gain, get_debug_meta
 from real_spike.utils.sglx_pkg import sglx as sglx
 
 logger = logging.getLogger(__name__)
@@ -46,8 +46,10 @@ class Generator(ZmqActor):
                 self.improv_logger.info("Successfully connected to SpikeGLX")
                 self.improv_logger.info("version <{}>\n".format(sglx.c_sglx_getVersion(self.hSglx)))
 
-                # TODO: if the connection works, also want to get the metadata
-                self.meta_data = get_meta(self.hSglx)
+                # get vmax, imax, and gain
+                self.Vmax = get_vmax(self.hSglx)
+                self.Imax = get_imax(self.hSglx)
+                self.gain = get_gain(self.hSglx)
             else:
                 self.improv_logger.info("error [{}]\n".format(sglx.c_sglx_getError(self.hSglx)))
                 raise Exception
@@ -55,12 +57,12 @@ class Generator(ZmqActor):
             self.sample_data = np.load("/home/clewis/repos/realSpike/analog_data.npy")
             self.meta_data = get_debug_meta()
 
-        # get Vmax
-        self.Vmax = float(self.meta_data["imAiRangeMax"])
-        # get Imax
-        self.Imax = float(self.meta_data["imMaxInt"])
-        # get gain
-        self.gain = float(self.meta_data['imroTbl'].split(sep=')')[1].split(sep=' ')[3])
+            # get Vmax
+            self.Vmax = float(self.meta_data["imAiRangeMax"])
+            # get Imax
+            self.Imax = float(self.meta_data["imMaxInt"])
+            # get gain
+            self.gain = float(self.meta_data['imroTbl'].split(sep=')')[1].split(sep=' ')[3])
 
         self.improv_logger.info("Completed setup for Generator")
 

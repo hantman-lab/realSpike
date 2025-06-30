@@ -1,4 +1,4 @@
-from ctypes import *
+from ctypes import byref, POINTER, c_int, c_short, c_bool, c_char_p, c_double
 
 from real_spike.utils.sglx_pkg import sglx as sglx
 
@@ -137,6 +137,7 @@ def get_imec_params(ip_address: str, port: int, ip=0):
 
     if ok:
         nval = c_int()
+        len = c_int()
         ok = sglx.c_sglx_getParamsImecProbe(byref(nval), hSglx, ip)
         if ok:
             kv = {}
@@ -151,6 +152,70 @@ def get_imec_params(ip_address: str, port: int, ip=0):
     sglx.c_sglx_close(hSglx)
     sglx.c_sglx_destroyHandle(hSglx)
 
+
+def get_imec_common(ip_address: str, port: int, ip=0):
+    hSglx = sglx.c_sglx_createHandle()
+    ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
+
+    if ok:
+        nval = c_int()
+        len = c_int()
+        ok = sglx.c_sglx_getParamsImecCommon(byref(nval), hSglx, ip)
+        if ok:
+            kv = {}
+            for i in range(0, nval.value):
+                line = sglx.c_sglx_getstr(byref(len), hSglx, i).decode()
+                parts = line.split('=')
+                kv.update({parts[0]: parts[1]})
+            print("{}".format(kv.items()))
+    if not ok:
+        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+
+    sglx.c_sglx_close(hSglx)
+    sglx.c_sglx_destroyHandle(hSglx)
+
+
+def get_vmax(ip_address: str, port: int, ip=0, js=2):
+    hSglx = sglx.c_sglx_createHandle()
+    ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
+
+    if ok:
+        vMin = c_double()
+        vMax = c_double()
+        ok = sglx.c_sglx_getStreamVoltageRange(byref(vMin), byref(vMax), hSglx, js, ip)
+        if ok:
+            print(vMax.value)
+
+    sglx.c_sglx_close(hSglx)
+    sglx.c_sglx_destroyHandle(hSglx)
+
+def get_gain(ip_address: str, port: int, ip=0, chan=0):
+    hSglx = sglx.c_sglx_createHandle()
+    ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
+
+    if ok:
+        APgain = c_double()
+        LFgain = c_double()
+        ok = sglx.c_sglx_getImecChanGains(byref(APgain), byref(LFgain), hSglx, ip, chan)
+        if ok:
+            print(APgain.value)
+
+    sglx.c_sglx_close(hSglx)
+    sglx.c_sglx_destroyHandle(hSglx)
+
+
+def get_imax(ip_address: str, port: int, ip=0, js=2):
+    hSglx = sglx.c_sglx_createHandle()
+    ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
+
+    if ok:
+        maxInt = c_int()
+        ok = sglx.c_sglx_getStreamMaxInt( byref(maxInt), hSglx, js, ip )
+        if ok:
+            print(maxInt.value)
+
+    sglx.c_sglx_close(hSglx)
+    sglx.c_sglx_destroyHandle(hSglx)
 
 def console_test(ip_address: str, port: int):
     print( "Console test...\n" )
@@ -169,11 +234,33 @@ def console_test(ip_address: str, port: int):
     sglx.c_sglx_close( hSglx )
     sglx.c_sglx_destroyHandle( hSglx )
 
+def get_i2v(ip_address: str, port: int, ip=0, js=2, chan=1):
+    hSglx = sglx.c_sglx_createHandle()
+    ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
+
+    if ok:
+        mult = c_double()
+        ok = sglx.c_sglx_getStreamI16ToVolts( byref(mult), hSglx, js, ip, chan )
+        if ok:
+            print(mult.value)
+
+    sglx.c_sglx_close( hSglx )
+    sglx.c_sglx_destroyHandle( hSglx )
 
 if __name__ == "__main__":
     # practice connection
-    ip_address = "10.172.16.169"
+    ip_address = "10.172.20.205"
     port = 4142
     console_test(ip_address=ip_address, port=port)
     check_initialization(ip_address=ip_address, port=port)
     get_datadir(ip_address=ip_address, port=port)
+
+    get_probes(ip_address=ip_address, port=port)
+
+    get_params(ip_address=ip_address, port=port)
+    get_imec_params(ip_address=ip_address, port=port)
+    get_imec_common(ip_address=ip_address, port=port)
+    get_gain(ip_address=ip_address, port=port)
+    get_vmax(ip_address=ip_address, port=port)
+    get_imax(ip_address=ip_address, port=port)
+    get_i2v(ip_address=ip_address, port=port)
