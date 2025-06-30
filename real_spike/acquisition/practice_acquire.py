@@ -1,4 +1,5 @@
 from ctypes import byref, POINTER, c_int, c_short, c_bool, c_char_p, c_double
+import numpy as np
 
 from real_spike.utils.sglx_pkg import sglx as sglx
 
@@ -247,6 +248,33 @@ def get_i2v(ip_address: str, port: int, ip=0, js=2, chan=1):
     sglx.c_sglx_close( hSglx )
     sglx.c_sglx_destroyHandle( hSglx )
 
+
+def fetch(ip_address: str, port: int, ip=0, js=2):
+    hSglx = sglx.c_sglx_createHandle()
+    ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
+
+    if ok:
+        data = POINTER(c_short)()
+        n_data = c_int()
+        py_chans = [i for i in range(384)]
+        nC = len(py_chans)
+        channels = (c_int * nC)(*py_chans)
+
+        max_samps = 150
+
+        headCt = sglx.c_sglx_fetchLatest(byref(data), byref(n_data), hSglx, js, ip, max_samps, channels, nC, 1)
+
+        if headCt > 0:
+            nt = int(n_data.value / nC)
+            print(nt)
+
+            a = np.ctypeslib.as_array(data, shape=(nt*nC,))
+            a = a.reshape(nC, nt)
+            print(a)
+
+
+
+
 if __name__ == "__main__":
     # practice connection
     ip_address = "10.172.20.205"
@@ -264,3 +292,5 @@ if __name__ == "__main__":
     get_vmax(ip_address=ip_address, port=port)
     get_imax(ip_address=ip_address, port=port)
     get_i2v(ip_address=ip_address, port=port)
+
+    fetch(ip_address=ip_address, port=port)

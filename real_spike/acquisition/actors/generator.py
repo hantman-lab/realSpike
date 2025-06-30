@@ -9,13 +9,13 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from real_spike.utils import LatencyLogger, get_vmax, get_imax, get_gain, get_debug_meta
+from real_spike.utils import LatencyLogger, get_vmax, get_imax, get_gain, get_debug_meta, fetch
 from real_spike.utils.sglx_pkg import sglx as sglx
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 
 class Generator(ZmqActor):
@@ -94,8 +94,7 @@ class Generator(ZmqActor):
         else:
             # fetch using sglx handler
             t = time.perf_counter_ns()
-            # data = self.hSglx.fetch()
-            data = 0
+            data = fetch(self.hSglx)
 
         # convert the data from analog to voltage
         data = 1e6 * data * self.Vmax / self.Imax / self.gain
