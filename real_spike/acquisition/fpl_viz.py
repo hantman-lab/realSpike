@@ -11,6 +11,7 @@ from real_spike.utils import *
 "----------------------------------------------------------------------------------------------------------------------"
 # get the seeded median
 #median = get_global_median()
+median = np.load("/home/clewis/repos/realSpike/real_spike/acquisition/medians.npy")
 
 # initialize a queue
 viz_queue = queue.Queue(maxsize=500)
@@ -82,24 +83,24 @@ def update():
             lg[i].data[:, 1] = data[i]
 
     # get the spike times
-    # ixs, _ = get_spike_events(data, median)
-    #
-    #
-    # # color each spike event orange
-    # for i in range(len(ixs)):
-    #     if ixs[i].shape[0] == 0:
-    #         continue
-    #     lg[i].colors[ixs[i]] = "orange"
-    #
-    # # make a raster plot using the pre-defined channel colors
-    # spikes, colors = make_raster(ixs, COLORS)
-    # spikes = np.concatenate(spikes)
-    #
-    # # clear the old raster plot
-    # figure["raster"].clear()
-    #
-    # # add new raster
-    # figure["raster"].add_scatter(spikes, sizes=3, colors=colors)
+    ixs, _ = get_spike_events(data, median)
+
+
+    # color each spike event orange
+    for i in range(len(ixs)):
+        if ixs[i].shape[0] == 0:
+            continue
+        lg[i].colors[ixs[i]] = "orange"
+
+    # make a raster plot using the pre-defined channel colors
+    spikes, colors = make_raster(ixs, COLORS)
+    spikes = np.concatenate(spikes)
+
+    # clear the old raster plot
+    figure["raster"].clear()
+
+    # add new raster
+    figure["raster"].add_scatter(spikes, sizes=3, colors=colors)
 
 
 

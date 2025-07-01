@@ -20,4 +20,5 @@ ground_truth_voltage.npy
 
 *.so
 
+*.npy
 

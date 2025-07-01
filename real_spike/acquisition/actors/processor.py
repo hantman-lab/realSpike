@@ -63,6 +63,7 @@ class Processor(ZmqActor):
                 self.improv_logger.info("Initialized median")
                 self.median = np.median(np.concatenate(np.array(self.data), axis=1), axis=1)
                 self.frame_num += 1
+                np.save("/home/clewis/repos/realSpike/real_spike/acquisition/medians.npy", self.median)
                 return
 
             # high pass filter
