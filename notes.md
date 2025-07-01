@@ -136,3 +136,16 @@ Connecting to SpikeGLX over Duke's network from my local machine to a Windows ma
   - activating a venv: `./venvs/bah/Scripts/Activate.ps1`
 - Weird certification error when trying to install things with `pip`:  `pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org <package_name>`
 
+
+# 7/1/25
+
+Things that needed to be updated before every run. 
+
+1. Command server setting in SpikeGLX
+   - Need to make sure that Windows machine is connected to Duke VPN
+   - Command server settings in SpikeGLX are working 
+2. In the generator actor 
+   - Need to update the ip address parameter that the SDK will try to connect on 
+   - If trying to pull a subset of data, need to update the channel_ids 
+3. In the processor actor
+   - Only need to update the number of expected channels for reshaping if taking a sub-selection of channels in the generator actor

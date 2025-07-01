@@ -26,7 +26,8 @@ class Generator(ZmqActor):
         self.frame_num = 0
         self.latency = LatencyLogger(name="generator_acquisition")
 
-        self.num_channels = 384
+        self.channel_ids = [i for i in range(384)]
+        self.num_channels = len(self.channel_ids)
 
 
     def __str__(self):
@@ -37,7 +38,7 @@ class Generator(ZmqActor):
         self.hSglx = sglx.c_sglx_createHandle()
 
         # connect to a given ip_address and port number
-        ip_address = "10.172.20.205"
+        ip_address = "10.172.20.179"
         port = 4142
 
         # only make a connection if not in debug mode
@@ -94,7 +95,7 @@ class Generator(ZmqActor):
         else:
             # fetch using sglx handler
             t = time.perf_counter_ns()
-            data = fetch(self.hSglx)
+            data = fetch(self.hSglx, channel_ids=self.channel_ids)
 
         # convert the data from analog to voltage
         data = 1e6 * data * self.Vmax / self.Imax / self.gain
