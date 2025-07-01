@@ -18,5 +18,9 @@ analog_data.npy
 meta.pkl
 ground_truth_voltage.npy
 
+/real_spike/utils/sglx_pkg/
+
 *.so
 *.dll
+
+
