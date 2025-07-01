@@ -80,11 +80,10 @@ class Processor(ZmqActor):
 
             try:
                 # output the data
-                # self.q_out.put(data_id)
+                self.q_out.put(data_id)
                 t2 = time.perf_counter_ns()
                 self.latency.add(self.frame_num, t2 - t)
                 self.frame_num += 1
-                self.client.client.delete(data_id)
 
             except Exception as e:
                 self.improv_logger.error(f"Processor Exception: {e}")
