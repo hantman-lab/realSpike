@@ -18,10 +18,6 @@ analog_data.npy
 meta.pkl
 ground_truth_voltage.npy
 
-real_spike/utils/sglx_pkg/sglx.py
-real_spike/utils/sglx_pkg/__init__.py
-
-*.dll
 *.so
 
 
