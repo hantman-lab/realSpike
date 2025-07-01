@@ -1,5 +1,6 @@
 from ctypes import byref, POINTER, c_int, c_short, c_bool, c_char_p, c_double
 import numpy as np
+import time
 
 from real_spike.utils.sglx_pkg import sglx as sglx
 
@@ -293,4 +294,6 @@ if __name__ == "__main__":
     get_imax(ip_address=ip_address, port=port)
     get_i2v(ip_address=ip_address, port=port)
 
+    t = time.time()
     fetch(ip_address=ip_address, port=port)
+    print(time.time() - t)
