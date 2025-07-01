@@ -33,15 +33,18 @@ gain = get_gain(hSglx)
 # store median
 median_data = list()
 
+# fetch the first 120 channels
+channel_ids = [i for i in range(120)]
+
 # run a for loop to
 for i in range(1000):
     # get the data
     t = time.perf_counter_ns()
-    data = fetch(hSglx)
+    data = fetch(hSglx, channel_ids=channel_ids)
 
     # convert the data from analog to voltage
     data = 1e6 * data * Vmax / Imax / gain
-    data = data.reshape(384, 150)
+    data = data.reshape(len(channel_ids), 150)
 
     # log the latency
     generator_logger.add(i, time.perf_counter_ns() - t)
