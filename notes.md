@@ -149,3 +149,5 @@ Things that needed to be updated before every run.
    - If trying to pull a subset of data, need to update the channel_ids 
 3. In the processor actor
    - Only need to update the number of expected channels for reshaping if taking a sub-selection of channels in the generator actor
+4. Psychopy viz
+   - The ip address of the processing machine need to updated 
