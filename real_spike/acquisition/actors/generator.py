@@ -38,7 +38,7 @@ class Generator(ZmqActor):
         self.hSglx = sglx.c_sglx_createHandle()
 
         # connect to a given ip_address and port number
-        ip_address = "10.172.20.179"
+        ip_address = "10.172.71.166"
         port = 4142
 
         # only make a connection if not in debug mode
@@ -86,7 +86,7 @@ class Generator(ZmqActor):
     def run_step(self):
         if self.frame_num == 1000:
             self.improv_logger.info(f"1000 frames")
-        if self.frame_num > 1_000:
+        if self.frame_num > 2_000:
             return
         if DEBUG_MODE:
             # use fake fetch function

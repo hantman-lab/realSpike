@@ -14,7 +14,7 @@ from real_spike.utils import *
 median = np.load("/home/clewis/repos/realSpike/real_spike/acquisition/medians.npy")
 
 # initialize a queue
-viz_queue = queue.Queue(maxsize=500)
+viz_queue = queue.Queue(maxsize=1_000)
 
 # connect to the viz actor via ZMQ
 sub = connect(port_number=5557)
@@ -35,7 +35,8 @@ rects = [
 figure = fpl.Figure(rects=rects,
                     size=(1000, 900),
                     names=["filtered spikes", "raster"],
-                    controller_ids="sync")
+                    # controller_ids="sync"
+                    )
 
 for subplot in figure:
     subplot.axes.visible = False
