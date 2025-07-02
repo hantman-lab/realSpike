@@ -46,7 +46,7 @@ def make_raster(ixs, COLORS):
     spikes = list()
 
     for i, ix in enumerate(ixs):
-        ys = np.full(ix.shape, i * 50)
+        ys = np.full(ix.shape, i * 35)
         sp = np.vstack([ix, ys]).T
         spikes.append(sp)
 

@@ -26,7 +26,7 @@ class Processor(ZmqActor):
         self.frame_num = 1
         self.data = list()
 
-        self.num_channels = 384
+        self.num_channels = 150
 
         self.latency = LatencyLogger("processor_acquisition")
         self.improv_logger.info("Completed setup for Processor")

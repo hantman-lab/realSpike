@@ -26,8 +26,10 @@ class Generator(ZmqActor):
         self.frame_num = 0
         self.latency = LatencyLogger(name="generator_acquisition")
 
-        self.channel_ids = [i for i in range(384)]
-        self.num_channels = len(self.channel_ids)
+        # specify num channels to take
+        self.num_channels = 150
+        self.channel_ids = [i for i in range(self.num_channels)]
+
 
 
     def __str__(self):

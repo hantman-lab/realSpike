@@ -9,12 +9,17 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from real_spike.utils import *
 
 "----------------------------------------------------------------------------------------------------------------------"
+# specify num channels to expect
+NUM_CHANNELS = 150
+# number of ms to display at one time
+WINDOW = 10
+
 # get the seeded median
 #median = get_global_median()
 median = np.load("/home/clewis/repos/realSpike/real_spike/acquisition/medians.npy")
 
 # initialize a queue
-viz_queue = queue.Queue(maxsize=1_000)
+viz_queue = queue.Queue(maxsize=5_000)
 
 # connect to the viz actor via ZMQ
 sub = connect(port_number=5557)
@@ -22,7 +27,7 @@ sub = connect(port_number=5557)
 # initialize colors for each channel
 COLORS = list()
 
-for i in range(384):
+for i in range(NUM_CHANNELS):
     # randomly select a color
     COLORS.append(np.append(np.random.rand(3), 1))
 "----------------------------------------------------------------------------------------------------------------------"
@@ -54,7 +59,7 @@ def update():
     if len(figure["filtered spikes"].graphics) == 0:
         # first data, fetch 5 chunks
         data = list()
-        for _ in range(5):
+        for _ in range(10):
             data.append(viz_queue.get())
         # concat chunks together and add to viz
         data = np.concatenate(data, axis=1)
@@ -104,17 +109,20 @@ def update():
     figure["raster"].add_scatter(spikes, sizes=3, colors=colors)
 
 
+i = 0
 
 def update_figure(p):
     """Fetch the data from the socket, deserialize it, and put it in the queue for visualization."""
     global viz_queue
+    global i
 
     buff = get_buffer(sub)
     if buff is not None:
+        i += 1
         # Deserialize the buffer into a NumPy array
         data = np.frombuffer(buff, dtype=np.float64)
 
-        data = data.reshape(384, 150)
+        data = data.reshape(NUM_CHANNELS, 150)
 
         # split the data into 1ms chunks instead of a single 5ms
         # allows for circular buffer to shift the data stream
@@ -125,7 +133,7 @@ def update_figure(p):
             viz_queue.put(chunk)
 
     # as long as there is something in the queue, update the viz
-    if viz_queue.qsize() != 0:
+    if viz_queue.qsize() != 0 and i > 2:
         update()
 
 figure.show()

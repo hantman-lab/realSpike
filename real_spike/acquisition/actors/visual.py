@@ -32,6 +32,9 @@ class Visual(ZmqActor):
         self.socket = context.socket(zmq.PUB)
         self.socket.bind("tcp://127.0.0.1:5557")
 
+        # specify num channels to expect
+        self.num_channels = 150
+
         self.improv_logger.info("Completed setup for Visual")
 
     def stop(self):
@@ -50,7 +53,7 @@ class Visual(ZmqActor):
 
         if data_id is not None:
             self.done = False
-            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(384, 150)
+            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(self.num_channels, 150)
 
             self.socket.send(self.frame.ravel())
             t2 = time.perf_counter_ns()

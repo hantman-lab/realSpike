@@ -17,6 +17,9 @@ TRIAL_NUMBER = 0
 # TODO: need to create a dataframe to save out pattern/trial information to columns = ["trial_number", "stim_time (datetime.now())", "pattern",
 # TODO: think about how to incorporate trial number, global number of patterns seen? increment every time you get
 
+
+# TODO: fail safe for laser, power limits
+
 COLUMN_NAMES = ["trial number", "stim time", "pattern"]
 df = pd.DataFrame(
             data=None,
