@@ -25,20 +25,12 @@ viz_queue = queue.Queue(maxsize=5_000)
 sub = connect(port_number=5557)
 
 # initialize colors for each channel
-COLORS = list()
-
-for i in range(NUM_CHANNELS):
-    # randomly select a color
-    COLORS.append(np.append(np.random.rand(3), 1))
+COLORS = np.random.rand(NUM_CHANNELS, 4) # [n_colors, rgba] array
+COLORS[:, -1] = 1 # set alpha = 1
 "----------------------------------------------------------------------------------------------------------------------"
 # setup figure
-rects = [
-    (0, 0, 0.5, 1),  # for image1
-    (0.5, 0, 0.5, 1),  # for image2
-]
-
-figure = fpl.Figure(rects=rects,
-                    size=(1000, 900),
+figure = fpl.Figure(shape=(1, 2),
+                    size=(1500, 900),
                     names=["filtered spikes", "raster"],
                     # controller_ids="sync"
                     )
@@ -59,7 +51,7 @@ def update():
     if len(figure["filtered spikes"].graphics) == 0:
         # first data, fetch 5 chunks
         data = list()
-        for _ in range(10):
+        for _ in range(30):
             data.append(viz_queue.get())
         # concat chunks together and add to viz
         data = np.concatenate(data, axis=1)
@@ -86,7 +78,12 @@ def update():
 
         # update the y-values of the existing data
         for i in range(lg.data[:].shape[0]):
+            # lg[i].data[:-30, 1] = lg[i].data[30:, 1]
+            # lg[i].data[-30:, 1] = chunk[i]
             lg[i].data[:, 1] = data[i]
+
+        # set first 40 indices using most recent 4ms lg[i].data[:40, 1] = lg[i].data[10:, 1]
+        # set last 10 indices using most recent 1ms lg[i].data[40:, 1] = chunk
 
     # get the spike times
     ixs, _ = get_spike_events(data, median)
@@ -133,7 +130,7 @@ def update_figure(p):
             viz_queue.put(chunk)
 
     # as long as there is something in the queue, update the viz
-    if viz_queue.qsize() != 0 and i > 2:
+    if viz_queue.qsize() != 0 and i > 6:
         update()
 
 figure.show()

@@ -55,7 +55,7 @@ class Visual(ZmqActor):
             self.done = False
             self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(self.num_channels, 150)
 
-            self.socket.send(self.frame.ravel())
+            self.socket.send(self.frame.tobytes())
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)
             self.frame_num += 1
