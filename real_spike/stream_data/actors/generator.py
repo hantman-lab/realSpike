@@ -3,6 +3,7 @@ import tifffile
 import logging
 import time
 import uuid
+import numpy as np
 
 import sys
 import os
@@ -21,7 +22,7 @@ class Generator(ZmqActor):
         self.data = None
         self.name = "Generator"
         self.frame_num = 0
-        self.latency = LatencyLogger(name="generator")
+        self.latency = LatencyLogger(name="generator_stream")
 
         # specify step size, send 5 ms of data at a time
         self.sample_rate = 30_000
@@ -54,7 +55,7 @@ class Generator(ZmqActor):
         l_time = int(self.frame_num * self.window)
         r_time = int((self.frame_num * self.window) + self.window)
         t = time.perf_counter_ns()
-        data = self.data[:, l_time:r_time].tobytes()
+        data = self.data[:, l_time:r_time].astype(np.float64).tobytes()
         data_id = str(os.getpid()) + str(uuid.uuid4())
         self.client.client.set(data_id, data, nx=True)
         try:

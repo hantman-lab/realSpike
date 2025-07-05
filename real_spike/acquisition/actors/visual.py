@@ -1,8 +1,7 @@
 from improv.actor import ZmqActor
 import logging
-import random
+import zmq
 import time
-import uuid
 import numpy as np
 
 import sys
@@ -15,7 +14,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Model(ZmqActor):
+class Visual(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if "name" in kwargs:
@@ -23,16 +22,24 @@ class Model(ZmqActor):
 
     def setup(self):
         if not hasattr(self, "name"):
-            self.name = "Model"
+            self.name = "Visual"
         self.frame_num = 27
         self.frame = None
 
-        self.latency = LatencyLogger("model")
+        self.latency = LatencyLogger("visual_acquisition")
 
-        self.improv_logger.info("Completed setup for Model")
+        context = zmq.Context()
+        self.socket = context.socket(zmq.PUB)
+        self.socket.bind("tcp://127.0.0.1:5557")
+
+        # specify num channels to expect
+        self.num_channels = 150
+
+        self.improv_logger.info("Completed setup for Visual")
 
     def stop(self):
-        self.improv_logger.info(f"Model stopping")
+        self.improv_logger.info(f"Visual stopping: {self.frame_num} frames seen")
+        self.socket.close()
         self.latency.save()
         return 0
 
@@ -46,18 +53,13 @@ class Model(ZmqActor):
 
         if data_id is not None:
             self.done = False
-            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(384, 150)
+            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(self.num_channels, 150)
 
-            # generate a random pattern to stimulate (29 options)
-            pattern_id = random.randint(0, 28)
-            p_store_id = str(os.getpid()) + str(uuid.uuid4())
-
-            self.client.client.set(p_store_id, pattern_id.to_bytes(), nx=True)
-            self.q_out.put(p_store_id)
+            self.socket.send(self.frame.tobytes())
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)
             self.frame_num += 1
 
             # delete data from store
-            # self.client.client.delete(data_id)
+            #self.client.client.delete(data_id)
 

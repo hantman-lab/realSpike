@@ -30,8 +30,10 @@ class PatternGenerator(ZmqActor):
 
         # set up zmq connection to psychopy file
         context = zmq.Context()
-        self.socket = context.socket(zmq.PUB)
-        self.socket.bind("tcp://127.0.0.1:5558")
+        self.socket = context.socket(zmq.PUSH)
+        address = "0.0.0.0"
+        port = 5559
+        self.socket.bind(f"tcp://{address}:{port}")
 
         self.latency = LatencyLogger("pattern")
 
@@ -62,7 +64,7 @@ class PatternGenerator(ZmqActor):
                 # self.improv_logger.info(f"Pattern selected: {pattern_id}")
 
                 # send the pattern to psychopy, only sending 1 pattern every 100 frames
-                self.socket.send(current_pattern.ravel())
+                self.socket.send(current_pattern.ravel().tobytes())
 
             # self.socket.send(current_pattern.ravel())
 

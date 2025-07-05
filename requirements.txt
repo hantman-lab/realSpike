@@ -5,3 +5,4 @@ pandas
 matplotlib
 tqdm
 psychopy
+nidaqmx

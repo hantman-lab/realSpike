@@ -116,17 +116,38 @@ sudo ln -s /usr/lib64/libtiff.so.6 /usr/lib64/libtiff.so.5
 sudo ldconfig
 ```
 
-## Other
-- Each actor only has one `q_out`
-  - If actor needs to send two different things to two different actors, put the data in the store 
-    under different ids and send the data in the queue as a tuple (unpack appropriately in the downstream actors)
+# 6/10/25
+
+Connecting to SpikeGLX over Duke's network from my local machine to a Windows machine.
+
+### Need to connect both of the machines to the Duke VPN `vpn.duke.edu`
+### Make sure to enable remote command server settings in the `SpikeGLX` "Options" menu
+### Need to copy the entire `sglx_pkg` after making the `.so` file in the SDK
+
 
 # 6/17/2025
 
 - Redis store setting the data at a particular `key`, keyword argument `nx` specifies whether the data at a particular `key`, if it exists, can be overwritten or not
   - If trying to reuse key, need to specify `nx=False`
  
+ 
 # 6/18/2025
 - Working with a windows machine (bleh)
   - activating a venv: `./venvs/bah/Scripts/Activate.ps1`
 - Weird certification error when trying to install things with `pip`:  `pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org <package_name>`
+
+
+# 7/1/25
+
+Things that needed to be updated before every run. 
+
+1. Command server setting in SpikeGLX
+   - Need to make sure that Windows machine is connected to Duke VPN
+   - Command server settings in SpikeGLX are working 
+2. In the generator actor 
+   - Need to update the ip address parameter that the SDK will try to connect on 
+   - If trying to pull a subset of data, need to update the channel_ids 
+3. In the processor actor
+   - Only need to update the number of expected channels for reshaping if taking a sub-selection of channels in the generator actor
+4. Psychopy viz
+   - The ip address of the processing machine need to updated 
