@@ -1,9 +1,10 @@
-from ctypes import byref, POINTER, c_int, c_short, c_bool, c_char_p, c_double
+from ctypes import byref, POINTER, c_int, c_short, c_double
+import numpy as np
+from pathlib import Path
+from typing import Dict
+
 from .sglx_pkg import sglx
 
-import numpy as np
-import pickle
-from typing import List, Dict
 
 
 def get_vmax(hSglx, ip=0, js=2):
@@ -28,6 +29,7 @@ def get_vmax(hSglx, ip=0, js=2):
         return 1
 
 
+
 def get_imax(hSglx, ip=0, js=2):
     """
     Get the imec probe max int. Same as meta_data['imMaxInt'].
@@ -47,6 +49,8 @@ def get_imax(hSglx, ip=0, js=2):
     else:
         print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
         return 1
+
+
 
 def get_gain(hSglx, ip=0, chan=0):
     """
@@ -68,6 +72,8 @@ def get_gain(hSglx, ip=0, chan=0):
     else:
         print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
         return 1
+
+
 
 def fetch(hSglx, ip=0, js=2, num_samps=150, channel_ids=None):
     """Fetch data.
@@ -101,13 +107,60 @@ def fetch(hSglx, ip=0, js=2, num_samps=150, channel_ids=None):
         a = np.ctypeslib.as_array(data, shape=(nt * nC,))
         return a
 
-def validation_voltage(data):
-    ground_truth = np.load("/home/clewis/repos/realSpike/ground_truth_voltage.npy")
-    return np.alltrue(data == ground_truth)
-
-def get_debug_meta():
-    with open("/home/clewis/repos/realSpike/meta.pkl", "rb") as f:
-        meta = pickle.load(f)
-    return meta
 
 
+def get_meta(file_path: str) -> Dict[str, str]:
+    """
+    Returns a dictionary of metadata associated with a previous SpikeGLX acquisition run.
+    Only used when DEBUG_MODE=True.
+
+    Should be a file_path that ends in `.meta`
+
+    Parameters
+    ----------
+    file_path : str
+        File name containing the metadata
+    """
+    # conver to path object
+    file_path = Path(file_path)
+
+    # initialize dictionary
+    metadata = dict()
+
+    if file_path.exists():
+        with file_path.open() as f:
+            mdata = f.read().splitlines()
+            for m in mdata:
+                item = m.split(sep='=')
+                if item[0][0] == '~':
+                    key = item[0][1:len(item[0])]
+                else:
+                    key = item[0]
+                metadata.update({key: item[1]})
+    else:
+        raise FileNotFoundError(file_path)
+
+    return metadata
+
+
+
+def get_sample_data(file_path: str, meta_data: Dict[str, str]):
+    """
+    Returns a numpy array of data from a previous SpikeGLX acquisition run.
+
+    Should be a file_path that ends in `.bin`
+
+    Parameters
+    ----------
+    file_path : str
+        File name of the binary file containing the data
+    meta_data : Dict[str, str]
+        Dictionary containing metadata needed to load the data in the correct format
+    """
+    nChan = int(meta_data['nSavedChans'])
+    nFileSamp = int(int(meta_data['fileSizeBytes'])/(2*nChan))
+
+    data = np.memmap(file_path, dtype='int16', mode='r',
+                        shape=(nChan, nFileSamp), offset=0, order='F')
+
+    return data

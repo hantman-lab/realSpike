@@ -9,13 +9,13 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from real_spike.utils import LatencyLogger, get_vmax, get_imax, get_gain, get_debug_meta, fetch
+from real_spike.utils import LatencyLogger, get_vmax, get_imax, get_gain, get_meta, fetch, get_sample_data
 from real_spike.utils.sglx_pkg import sglx as sglx
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 
 class Generator(ZmqActor):
@@ -57,8 +57,13 @@ class Generator(ZmqActor):
                 self.improv_logger.info("error [{}]\n".format(sglx.c_sglx_getError(self.hSglx)))
                 raise Exception
         else:
-            self.sample_data = np.load("/home/clewis/repos/realSpike/analog_data.npy")
-            self.meta_data = get_debug_meta()
+            self.meta_data = get_meta("/home/clewis/repos/realSpike/data/120s_test/rb50_20250126_g0_t0.imec0.ap.meta")
+            self.sample_data = get_sample_data("/home/clewis/repos/realSpike/data/120s_test/rb50_20250126_g0_t0.imec0.ap.bin", self.meta_data)
+
+            # specify step size, send 5 ms of data at a time
+            self.sample_rate = float(self.meta_data['imSampRate'])
+            # 5ms = 1 sec of data (30_000 time points) / 1_000 * 5
+            self.window = 5 * self.sample_rate / 1_000
 
             # get Vmax
             self.Vmax = float(self.meta_data["imAiRangeMax"])
@@ -81,9 +86,9 @@ class Generator(ZmqActor):
 
     def fetch(self):
         """Return 5ms of analog data stored on disk."""
-        # TODO: reformat this data so it will be how it comes off when you call fetchLatest
-        i = random.randint(0, self.sample_data.shape[1] - 151)
-        return self.sample_data[:self.num_channels, i:i + 150].ravel()
+        l_time = int(self.frame_num * self.window)
+        r_time = int((self.frame_num * self.window) + self.window)
+        return self.sample_data[:self.num_channels, l_time:r_time].ravel()
 
     def run_step(self):
         if self.frame_num == 1000:
