@@ -17,7 +17,6 @@ logger.setLevel(logging.INFO)
 
 DEBUG_MODE = False
 
-
 class Generator(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -96,6 +95,8 @@ class Generator(ZmqActor):
         if self.frame_num % 1000 == 0:
             self.improv_logger.info(f"{self.frame_num} frames")
         # TODO: monitor the store size and stop generator if it is too close to the max
+        if self.frame_num > 1600:
+            return
         if DEBUG_MODE:
             # use fake fetch function
             t = time.perf_counter_ns()
@@ -108,6 +109,9 @@ class Generator(ZmqActor):
         # convert the data from analog to voltage
         data = 1e6 * data * self.Vmax / self.Imax / self.gain
         data = data.reshape(self.num_channels, 150)
+
+        if not DEBUG_MODE:
+            data = data.T
 
         if self.frame_num <= 1:
             np.save(f"/home/clewis/repos/realSpike/data/120s_test/5ms_debug_{DEBUG_MODE}_frame_{self.frame_num}.npy", data)
