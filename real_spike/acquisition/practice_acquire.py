@@ -1,6 +1,7 @@
 from ctypes import byref, POINTER, c_int, c_short, c_bool, c_char_p, c_double
 import numpy as np
 import time
+from tqdm import tqdm
 
 from real_spike.utils.sglx_pkg import sglx as sglx
 
@@ -257,11 +258,24 @@ def fetch_latest(ip_address: str, port: int, ip=0, js=2):
     if ok:
         data = POINTER(c_short)()
         n_data = c_int()
-        py_chans = [i for i in range(384)]
+        py_chans = [i for i in range(150)]
         nC = len(py_chans)
         channels = (c_int * nC)(*py_chans)
 
         max_samps = 150
+
+        APgain = c_double()
+        LFgain = c_double()
+        sglx.c_sglx_getImecChanGains(byref(APgain), byref(LFgain), hSglx, ip, 1)
+        maxInt = c_int()
+        sglx.c_sglx_getStreamMaxInt(byref(maxInt), hSglx, js, ip)
+        vMin = c_double()
+        vMax = c_double()
+        sglx.c_sglx_getStreamVoltageRange(byref(vMin), byref(vMax), hSglx, js, ip)
+
+        imax = maxInt.value
+        vmax = vMax.value
+        gain = APgain.value
 
         d = c_double()
         sglx.c_sglx_getStreamI16ToVolts(d, hSglx, js, ip, 0)
@@ -270,18 +284,68 @@ def fetch_latest(ip_address: str, port: int, ip=0, js=2):
 
         if headCt > 0:
             nt = int(n_data.value / nC)
-            print(nt)
+            # print(nt)
 
-            a = np.ctypeslib.as_array(data, shape=(nt*nC,))
-            a = 1e6 * a * d
+            # a = np.ctypeslib.as_array(data, shape=(nt*nC,))
+            a = np.ctypeslib.as_array(data, shape=(n_data.value,))
+            # print(a)
+            a = 1e6 * a * vmax / imax / gain
             a = a.reshape(nC, nt)
-            print(a)
 
 
         sglx.c_sglx_close(hSglx)
         sglx.c_sglx_destroyHandle(hSglx)
 
         return a
+
+
+def fetch(ip_address: str, port: int, ip=0, js=2, count=None):
+    hSglx = sglx.c_sglx_createHandle()
+    ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
+
+    if ok:
+        data = POINTER(c_short)()
+        n_data = c_int()
+        py_chans = [i for i in range(150)]
+        nC = len(py_chans)
+        channels = (c_int * nC)(*py_chans)
+
+        max_samps = 150
+
+        APgain = c_double()
+        LFgain = c_double()
+        sglx.c_sglx_getImecChanGains(byref(APgain), byref(LFgain), hSglx, ip, 1)
+        maxInt = c_int()
+        sglx.c_sglx_getStreamMaxInt(byref(maxInt), hSglx, js, ip)
+        vMin = c_double()
+        vMax = c_double()
+        sglx.c_sglx_getStreamVoltageRange(byref(vMin), byref(vMax), hSglx, js, ip)
+
+        imax = maxInt.value
+        vmax = vMax.value
+        gain = APgain.value
+
+        d = c_double()
+        sglx.c_sglx_getStreamI16ToVolts(d, hSglx, js, ip, 0)
+
+        if count is None:
+            count = sglx.c_sglx_getStreamSampleCount(hSglx, js, ip)
+
+        headCt = sglx.c_sglx_fetch(byref(data), byref(n_data), hSglx, js, ip, count, max_samps, channels, nC, 1)
+
+        if headCt > 0:
+            nt = int(n_data.value / nC)
+            # print(nt)
+
+            a = np.ctypeslib.as_array(data, shape=(nt * nC,))
+            # print(a)
+            a = 1e6 * a * vmax / imax / gain
+            a = a.reshape(nC, nt)
+
+        sglx.c_sglx_close(hSglx)
+        sglx.c_sglx_destroyHandle(hSglx)
+
+        return count, a
 
 
 if __name__ == "__main__":
@@ -298,9 +362,24 @@ if __name__ == "__main__":
     # get_imec_params(ip_address=ip_address, port=port)
     # get_imec_common(ip_address=ip_address, port=port)
     # get_gain(ip_address=ip_address, port=port)
-    # get_vmax(ip_address=ip_address, port=port)
+    #get_vmax(ip_address=ip_address, port=port)
     # get_imax(ip_address=ip_address, port=port)
     # get_i2v(ip_address=ip_address, port=port)
 
+    # count, b = fetch(ip_address, port, ip=0, js=2)
+    # print(count)
+    # print(b)
+
+    # mins = list()
+    # maxs = list()
+    #
+    # for i in tqdm(range(0, 1_000)):
     a = fetch_latest(ip_address=ip_address, port=port)
-    np.save("/home/clewis/repos/realSpike/data/120s_test/i2v_multiplied.npy",a)
+    print(a.shape)
+    print(a)
+    #     mins.append(a.min(axis=1))
+    #     maxs.append(a.max(axis=1))
+    #
+    # print(np.array(mins).min())
+    # print(np.array(maxs).max())
+    #np.save("/home/clewis/repos/realSpike/data/120s_test/i2v_multiplied.npy",a)

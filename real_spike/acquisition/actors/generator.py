@@ -88,6 +88,8 @@ class Generator(ZmqActor):
         """Return 5ms of analog data stored on disk."""
         l_time = int(self.frame_num * self.window)
         r_time = int((self.frame_num * self.window) + self.window)
+        if r_time > self.sample_data.shape[1]:
+            return np.full((self.num_channels, self.window), np.nan)
         return self.sample_data[:self.num_channels, l_time:r_time].ravel()
 
     def run_step(self):
