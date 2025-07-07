@@ -94,17 +94,17 @@ def fetch(hSglx, ip=0, js=2, num_samps=150, channel_ids=None):
     n_data = c_int()
     if channel_ids is None:
         channel_ids = [i for i in range(384)]
-    nC = len(channel_ids)
-    channels = (c_int * nC)(*channel_ids)
+    num_channels = len(channel_ids)
+    channels = (c_int * num_channels)(*channel_ids)
 
-    headCt = sglx.c_sglx_fetchLatest(byref(data), byref(n_data), hSglx, js, ip, num_samps, channels, nC, 1)
+    headCt = sglx.c_sglx_fetchLatest(byref(data), byref(n_data), hSglx, js, ip, num_samps, channels, num_channels, 1)
 
     if headCt > 0:
         # should equal the number of samples
-        nt = int(n_data.value / nC)
+        nt = int(n_data.value / num_channels)
 
         # turn into an array
-        a = np.ctypeslib.as_array(data, shape=(nt * nC,))
+        a = np.ctypeslib.as_array(data, shape=(nt * num_channels,))
         return a
 
 

@@ -250,7 +250,7 @@ def get_i2v(ip_address: str, port: int, ip=0, js=2, chan=1):
     sglx.c_sglx_destroyHandle( hSglx )
 
 
-def fetch(ip_address: str, port: int, ip=0, js=2):
+def fetch_latest(ip_address: str, port: int, ip=0, js=2):
     hSglx = sglx.c_sglx_createHandle()
     ok = sglx.c_sglx_connect(hSglx, ip_address.encode(), port)
 
@@ -263,6 +263,9 @@ def fetch(ip_address: str, port: int, ip=0, js=2):
 
         max_samps = 150
 
+        d = c_double()
+        sglx.c_sglx_getStreamI16ToVolts(d, hSglx, js, ip, 0)
+
         headCt = sglx.c_sglx_fetchLatest(byref(data), byref(n_data), hSglx, js, ip, max_samps, channels, nC, 1)
 
         if headCt > 0:
@@ -270,30 +273,34 @@ def fetch(ip_address: str, port: int, ip=0, js=2):
             print(nt)
 
             a = np.ctypeslib.as_array(data, shape=(nt*nC,))
+            a = 1e6 * a * d
             a = a.reshape(nC, nt)
             print(a)
 
 
+        sglx.c_sglx_close(hSglx)
+        sglx.c_sglx_destroyHandle(hSglx)
+
+        return a
 
 
 if __name__ == "__main__":
     # practice connection
-    ip_address = "10.172.20.205"
+    ip_address = "10.172.21.39"
     port = 4142
-    console_test(ip_address=ip_address, port=port)
-    check_initialization(ip_address=ip_address, port=port)
-    get_datadir(ip_address=ip_address, port=port)
+    # console_test(ip_address=ip_address, port=port)
+    # check_initialization(ip_address=ip_address, port=port)
+    # get_datadir(ip_address=ip_address, port=port)
+    #
+    # get_probes(ip_address=ip_address, port=port)
+    #
+    # get_params(ip_address=ip_address, port=port)
+    # get_imec_params(ip_address=ip_address, port=port)
+    # get_imec_common(ip_address=ip_address, port=port)
+    # get_gain(ip_address=ip_address, port=port)
+    # get_vmax(ip_address=ip_address, port=port)
+    # get_imax(ip_address=ip_address, port=port)
+    # get_i2v(ip_address=ip_address, port=port)
 
-    get_probes(ip_address=ip_address, port=port)
-
-    get_params(ip_address=ip_address, port=port)
-    get_imec_params(ip_address=ip_address, port=port)
-    get_imec_common(ip_address=ip_address, port=port)
-    get_gain(ip_address=ip_address, port=port)
-    get_vmax(ip_address=ip_address, port=port)
-    get_imax(ip_address=ip_address, port=port)
-    get_i2v(ip_address=ip_address, port=port)
-
-    t = time.time()
-    fetch(ip_address=ip_address, port=port)
-    print(time.time() - t)
+    a = fetch_latest(ip_address=ip_address, port=port)
+    np.save("/home/clewis/repos/realSpike/data/120s_test/i2v_multiplied.npy",a)

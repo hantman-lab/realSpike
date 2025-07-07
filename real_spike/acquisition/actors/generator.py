@@ -15,7 +15,7 @@ from real_spike.utils.sglx_pkg import sglx as sglx
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 
 class Generator(ZmqActor):
@@ -40,7 +40,7 @@ class Generator(ZmqActor):
         self.hSglx = sglx.c_sglx_createHandle()
 
         # connect to a given ip_address and port number
-        ip_address = "10.172.71.166"
+        ip_address = "10.172.21.39"
         port = 4142
 
         # only make a connection if not in debug mode
@@ -91,10 +91,9 @@ class Generator(ZmqActor):
         return self.sample_data[:self.num_channels, l_time:r_time].ravel()
 
     def run_step(self):
-        if self.frame_num == 1000:
-            self.improv_logger.info(f"1000 frames")
-        if self.frame_num > 2_000:
-            return
+        if self.frame_num % 1000 == 0:
+            self.improv_logger.info(f"{self.frame_num} frames")
+        # TODO: monitor the store size and stop generator if it is too close to the max
         if DEBUG_MODE:
             # use fake fetch function
             t = time.perf_counter_ns()
@@ -107,6 +106,9 @@ class Generator(ZmqActor):
         # convert the data from analog to voltage
         data = 1e6 * data * self.Vmax / self.Imax / self.gain
         data = data.reshape(self.num_channels, 150)
+
+        if self.frame_num <= 1:
+            np.save(f"/home/clewis/repos/realSpike/data/120s_test/5ms_debug_{DEBUG_MODE}_frame_{self.frame_num}.npy", data)
 
         # send to processor
         data_id = str(os.getpid()) + str(uuid.uuid4())
