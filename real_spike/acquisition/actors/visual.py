@@ -61,5 +61,5 @@ class Visual(ZmqActor):
             self.frame_num += 1
 
             # delete data from store
-            self.client.client.delete(data_id)
+            #self.client.client.delete(data_id)
 

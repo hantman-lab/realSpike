@@ -27,7 +27,7 @@ class Model(ZmqActor):
         self.frame_num = 27
         self.frame = None
 
-        self.latency = LatencyLogger("model")
+        self.latency = LatencyLogger("model_acquisition")
 
         # number of channels to expect
         self.num_channels = 150

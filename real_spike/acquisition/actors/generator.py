@@ -15,7 +15,10 @@ from real_spike.utils.sglx_pkg import sglx as sglx
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# streaming from disk flag
 DEBUG_MODE = False
+# using netgear switch
+NETGEAR = True
 
 class Generator(ZmqActor):
     def __init__(self, *args, **kwargs):
@@ -23,7 +26,7 @@ class Generator(ZmqActor):
         self.data = None
         self.name = "Generator"
         self.frame_num = 0
-        self.latency = LatencyLogger(name="generator_acquisition")
+        self.latency = LatencyLogger(name=f"generator_acquisition_{DEBUG_MODE}_netgear_{NETGEAR}")
 
         # specify num channels to take
         self.num_channels = 150
@@ -112,9 +115,6 @@ class Generator(ZmqActor):
 
         if not DEBUG_MODE:
             data = data.T
-
-        if self.frame_num <= 1:
-            np.save(f"/home/clewis/repos/realSpike/data/120s_test/5ms_debug_{DEBUG_MODE}_frame_{self.frame_num}.npy", data)
 
         # send to processor
         data_id = str(os.getpid()) + str(uuid.uuid4())
