@@ -364,22 +364,7 @@ if __name__ == "__main__":
     # get_gain(ip_address=ip_address, port=port)
     #get_vmax(ip_address=ip_address, port=port)
     # get_imax(ip_address=ip_address, port=port)
-    # get_i2v(ip_address=ip_address, port=port)
+    #get_i2v(ip_address=ip_address, port=port)
 
     # count, b = fetch(ip_address, port, ip=0, js=2)
-    # print(count)
-    # print(b)
-
-    # mins = list()
-    # maxs = list()
-    #
-    # for i in tqdm(range(0, 1_000)):
     a = fetch_latest(ip_address=ip_address, port=port)
-    print(a.shape)
-    print(a)
-    #     mins.append(a.min(axis=1))
-    #     maxs.append(a.max(axis=1))
-    #
-    # print(np.array(mins).min())
-    # print(np.array(maxs).max())
-    #np.save("/home/clewis/repos/realSpike/data/120s_test/i2v_multiplied.npy",a)
