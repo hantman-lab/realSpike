@@ -1,14 +1,15 @@
-"""Test latency at different sampling rates."""
+"""Test latency for fetching data using netgear switch."""
 
 from real_spike.utils.sglx_pkg import sglx as sglx
 from ctypes import byref, POINTER, c_int, c_short, c_bool, c_char_p
-from time import time
+import time
 import pandas as pd
 import os
 from datetime import datetime
+from tqdm import tqdm
 
 
-def set_up(ip_address: str, port: int):
+def connect(ip_address: str, port: int):
     """
     Attempt to connect to SpikeGLX SDK running on acquisition machine. If successful, check to make sure
     initialization and data acquisition is in progress.
@@ -17,7 +18,7 @@ def set_up(ip_address: str, port: int):
     if successful.
     """
     # connect to SpikeGLX
-    print("Calling connect...\n\n")
+    print("Calling connect...\n")
     hSglx = sglx.c_sglx_createHandle()
 
     if sglx.c_sglx_connect(hSglx, ip_address.encode(), port):
@@ -58,12 +59,13 @@ def set_up(ip_address: str, port: int):
             return None
 
 
-def data_fetch(
+def fetch(
         hSglx,
-        channel_num: int,
-        sample_num: int,
-        ip: int,
-        downsample: int
+        channel_num: int = 384,
+        sample_num: int = 150,
+        ip: int = 0,
+        js: int = 2,
+        downsample: int = 1
 ):
     """
     Get the latency at differing interval and sample rates to be stored in a pandas dataframe.
@@ -71,69 +73,52 @@ def data_fetch(
     Parameters
     ----------
     hSglx:
-        Active handle to open SpikeGLX SDK connection
-    channel_num: int
+        SpikeGLX handle
+    channel_num: int, default 384
         Number of channels on probe to fetch from.
-    sample_num: int
-        Number of samples to fetch.
-    ip: int
+    sample_num: int, default 150
+        Number of samples to fetch. 5ms default
+    ip: int, default 0
         Probe number.
+    js: int, default 2
+        Probe type (imec=2)
+    downsample: int, default 1
+        Factor to downsample by, every n-th sample taken
     """
-
-    # load dataframe
     df_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "latency_df.h5")
+    COLUMN_NAMES = ["datetime", "num_channels", "num_samples", "downsample_factor", "avg_latency", "times"]
 
-    df = pd.read_hdf(df_path)
+    if not os.path.exist(df_path):
+        df = pd.DataFrame(
+            data=None,
+            columns=COLUMN_NAMES
+        )
+    else:
+        df = pd.read_hdf(df_path)
 
-    # try to fetch data and add latency to df as new row
-    js = 2
     data = POINTER(c_short)()
-    ndata = c_int()
-
-    # collect from channels on the probe given by channel_num
+    n_data = c_int()
     py_chans = [i for i in range(channel_num)]
+    nC = len(py_chans)
+    channels = (c_int * nC)(*py_chans)
 
-    # number of channels getting data from
-    n_cs = len(py_chans)
+    times = list()
 
-    # channel_subset is an array of specific channels to fetch, optionally,
-    #      -1 = all acquired channels, or,
-    #      -2 = all saved channels.
-    channel_subset = (c_int * n_cs)(*py_chans)
+    for i in tqdm(range(1000)):
+        t = time.perf_counter_ns()
+        headCt = sglx.c_sglx_fetchLatest(byref(data), byref(n_data), hSglx, js, ip, sample_num, channels, nC, downsample)
+        t2 = time.perf_counter_ns() - t
+        times.append(t2 / 1e6)
 
-    # downsample = every nth sample
-    #downsample = 1
+    # append row to end of dataframe
+    df.loc[len(df.index)] = [datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                             num_channels,
+                             num_samples,
+                             downsample_factor,
+                             sum(times) / len(times),
+                             times]
 
-    # get sampling rate
-    srate = sglx.c_sglx_getStreamSampleRate(hSglx, js, ip)
-    print("Sample rate {}\n".format(srate))
-
-    if srate == 0:
-        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
-        return
-
-    t = time()
-    for i in range(sample_num):
-        headCt = sglx.c_sglx_fetchLatest(byref(data),
-                                         byref(ndata),
-                                         hSglx,
-                                         js,
-                                         ip,
-                                         int(srate),
-                                         channel_subset,
-                                         n_cs,
-                                         downsample)
-
-        if headCt > 0:
-            nt = int(ndata.value / n_cs)
-            print("Head count {}, samples {}\n".format(headCt, nt))
-    t2 = time() - t
-
-    # once fetch is done for given sample_rate, channel_num, sample_num
-    # add row to df
-    # print df
-    df.loc[len(df.index)] = [datetime.now().strftime("%d/%m/%Y %H:%M:%S"), channel_num, sample_num, srate / downsample, t2]
-
+    # save the dataframe
     df.to_hdf(df_path, key="df")
 
     print(df)
@@ -142,31 +127,26 @@ def data_fetch(
 
 
 if __name__ == "__main__":
-    # check setup before trying to fetch
-    hSglx = set_up(ip_address="192.168.0.101", port=4142)
+    ip_address = "192.168.0.101"
+    port = 4142
+
+    hSglx = connect(ip_address="192.168.0.101", port=4142)
 
     if hSglx is not None:
-        # get available probes
-        list = c_char_p()
-        ok = sglx.c_sglx_getProbeList(byref(list), hSglx)
-        if ok:
-            print(f"Available probes: {list.value}")
-        # get number of available channels on probe
-        # nval = c_int()
-        # ok = sglx.c_sglx_getStreamAcqChans(byref(nval), hSglx, 2, 0)
-        #
-        # if ok:
-        #     num_chan = sglx.c_sglx_getint(hSglx, nval)
-        #     print(f"Number of channels available for probe {0} = {num_chan}")
-        channels = [i for i in range(1,384)]
-        downsamples = [i for i in range(1,30)]
+        # try different fetch parameters and log latency (num channels, num samples, downsample)
+        num_channels = [120, 150, 250, 384]
+        downsample_factor = [1, 2]  # no downsampling
+        num_samples = [30, 60, 90, 150, 300] # 1ms, 2ms, 3ms, 5ms, 10ms
 
-        for d in downsamples:
-            data_fetch(hSglx=hSglx,
-                       channel_num=384,
-                       sample_num=1,
-                       ip=0,
-                       downsample=d)
+        for d in tqdm(downsample_factor):
+            for n in tqdm(num_channels):
+                for s in tqdm(num_samples):
+                    fetch(hSglx=hSglx,
+                               channel_num=n,
+                               sample_num=s,
+                               ip=0,
+                               js=2,
+                               downsample=d)
 
         # will need to eventually close connection
         sglx.c_sglx_close(hSglx)
