@@ -88,7 +88,7 @@ def fetch(
     df_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "latency_df.h5")
     COLUMN_NAMES = ["datetime", "num_channels", "num_samples", "downsample_factor", "avg_latency", "times"]
 
-    if not os.path.exist(df_path):
+    if not os.path.exists(df_path):
         df = pd.DataFrame(
             data=None,
             columns=COLUMN_NAMES
@@ -112,9 +112,9 @@ def fetch(
 
     # append row to end of dataframe
     df.loc[len(df.index)] = [datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                             num_channels,
-                             num_samples,
-                             downsample_factor,
+                             channel_num,
+                             sample_num,
+                             downsample,
                              sum(times) / len(times),
                              times]
 

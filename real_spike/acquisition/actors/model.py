@@ -36,6 +36,7 @@ class Model(ZmqActor):
 
     def stop(self):
         self.improv_logger.info(f"Model stopping")
+        .0
         self.latency.save()
         return 0
 

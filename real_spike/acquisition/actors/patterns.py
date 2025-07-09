@@ -33,6 +33,53 @@ class PatternGenerator(ZmqActor):
         self.socket = context.socket(zmq.PUSH)
         address = "0.0.0.0"
         port = 5559
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         self.socket.bind(f"tcp://{address}:{port}")
 
         self.latency = LatencyLogger("pattern_acquistion")

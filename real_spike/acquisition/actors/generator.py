@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # streaming from disk flag
-DEBUG_MODE = False
+DEBUG_MODE = True
 # using netgear switch
-NETGEAR = True
+NETGEAR = False
 
 class Generator(ZmqActor):
     def __init__(self, *args, **kwargs):
@@ -26,7 +26,7 @@ class Generator(ZmqActor):
         self.data = None
         self.name = "Generator"
         self.frame_num = 0
-        self.latency = LatencyLogger(name=f"generator_acquisition_{DEBUG_MODE}_netgear_{NETGEAR}")
+        self.latency = LatencyLogger(name=f"generator_acquisition_debug_{DEBUG_MODE}_netgear_{NETGEAR}")
 
         # specify num channels to take
         self.num_channels = 150
@@ -42,7 +42,7 @@ class Generator(ZmqActor):
         self.hSglx = sglx.c_sglx_createHandle()
 
         # connect to a given ip_address and port number
-        ip_address = "10.172.21.39"
+        ip_address = "192.168.0.101"
         port = 4142
 
         # only make a connection if not in debug mode
@@ -98,7 +98,7 @@ class Generator(ZmqActor):
         if self.frame_num % 1000 == 0:
             self.improv_logger.info(f"{self.frame_num} frames")
         # TODO: monitor the store size and stop generator if it is too close to the max
-        if self.frame_num > 1600:
+        if self.frame_num > 2500:
             return
         if DEBUG_MODE:
             # use fake fetch function
