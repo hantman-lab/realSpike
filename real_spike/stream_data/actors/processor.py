@@ -30,7 +30,7 @@ class Processor(ZmqActor):
         self.data = list()
         self.data_ids = list()
 
-        self.latency = LatencyLogger("processor")
+        self.latency = LatencyLogger("processor_stream")
         self.improv_logger.info("Completed setup for Processor")
 
     def stop(self):
@@ -51,7 +51,7 @@ class Processor(ZmqActor):
         if data_id is not None and self.frame_num is not None:
             self.done = False
 
-            self.frame = np.frombuffer(self.client.client.get(data_id)).reshape(384, 150)
+            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(384, 150)
 
             # accumulate 4 seconds of data
             if self.frame_num < 27:
@@ -73,13 +73,13 @@ class Processor(ZmqActor):
             #
             # if self.frame_num % 100 == 0:
             #     # sum spike events across channels
-            #     self.improv_logger.info(f"Processed frame {self.frame_num}, spike counts: {spike_counts}")
+            # self.improv_logger.info(f"Processed frame {self.frame_num}, spike counts: {spike_counts}")
 
             # reuse data id from before
-            self.client.client.set(data_id, data.tobytes(), nx=True)
+            self.client.client.set(data_id, data.tobytes(), nx=False)
 
             try:
-                # output a tuple of keys, one for the data and one for the pattern
+                # output the data
                 self.q_out.put(data_id)
                 t2 = time.perf_counter_ns()
                 self.latency.add(self.frame_num, t2 - t)

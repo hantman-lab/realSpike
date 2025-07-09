@@ -13,3 +13,10 @@
 /latency
 
 realSpike.egg-info/
+
+/data
+
+*.so
+
+*.npy
+
