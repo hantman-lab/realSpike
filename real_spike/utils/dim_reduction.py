@@ -48,3 +48,23 @@ def kalman_filter(data, A=1, H=1, Q=1e-2, R=1, initial_state=None):
             smoothed[ch, t] = kf.x[0, 0]
 
     return smoothed
+
+
+
+def get_trial_PCA(trial, pca, num_comp=3):
+    """Returns the fraction of explained variance and projected trajectory for a given trial."""
+    X = trial.T # (smoothed bins, channels)
+
+    # total trial variance
+    total_var = np.var(X, axis=0).sum()
+
+    # project the data
+    proj = pca.transform(X)
+
+    # variance for a given number of comps
+    pc_vars = np.var(proj, axis=0)
+
+    # fraction of explained var
+    explained = pc_vars / total_var
+
+    return explained[:num_comp], proj
