@@ -20,12 +20,12 @@ def butter_filter(data, cutoff, fs, order=5, axis=-1, btype='high'):
     return y
 
 
-def get_spike_events(data: np.ndarray, median):
+def get_spike_events(data: np.ndarray, median, num_dev=4):
     # calculate mad
     mad = scipy.stats.median_abs_deviation(data, axis=1)
 
     # Calculate threshold
-    thresh = (4 * mad) + median
+    thresh = (num_dev * mad) + median
 
     # Vectorized computation of absolute data
     abs_data = np.abs(data)
