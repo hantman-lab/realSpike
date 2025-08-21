@@ -65,7 +65,7 @@ class Generator(ZmqActor):
             # specify step size, send 5 ms of data at a time
             self.sample_rate = float(self.meta_data['imSampRate'])
             # 5ms = 1 sec of data (30_000 time points) / 1_000 * 5
-            self.window = 5 * self.sample_rate / 1_000
+            self.window = int(5 * self.sample_rate / 1_000)
 
             # get Vmax
             self.Vmax = float(self.meta_data["imAiRangeMax"])
