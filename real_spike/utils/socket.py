@@ -1,3 +1,5 @@
+import zmq
+
 def connect(address: str = "127.0.0.1", port_number: int = 5558):
     """
     Connect to the pattern generator actor via zmq. Make sure that ports match and are different from visual

@@ -72,9 +72,9 @@ class Processor(ZmqActor):
             # get spike counts and report
             spike_times, spike_counts = get_spike_events(data, self.median)
             #
-            # if self.frame_num % 100 == 0:
+            # if self.frame_num % 500 == 0:
             #     # sum spike events across channels
-            # self.improv_logger.info(f"Processed frame {self.frame_num}, spike counts: {spike_counts}")
+            #     self.improv_logger.info(f"Processed frame {self.frame_num}, spike counts: {spike_counts}")
 
             # reuse data id from before
             self.client.client.set(data_id, data.tobytes(), nx=False)
