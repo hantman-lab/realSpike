@@ -20,3 +20,15 @@ def connect(address: str = "127.0.0.1", port_number: int = 5558):
     print(f"Made connection on port {port_number} at address {address}")
 
     return sub
+
+
+def get_buffer(sub):
+    """Gets the buffer from the publisher."""
+    try:
+        b = sub.recv(zmq.NOBLOCK)
+    except zmq.Again:
+        pass
+    else:
+        return b
+
+    return None

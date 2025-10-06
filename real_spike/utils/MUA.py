@@ -68,15 +68,6 @@ def get_global_median():
 
     return median
 
-def get_buffer(sub):
-    """Gets the buffer from the publisher."""
-    try:
-        b = sub.recv(zmq.NOBLOCK)
-    except zmq.Again:
-        pass
-    else:
-        return b
 
-    return None
 
 
