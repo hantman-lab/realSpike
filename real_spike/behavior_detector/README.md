@@ -14,10 +14,12 @@
 - Process a frame one at a time, detect paw (either via bright pixel marker on paw or bounding box around object)
 - If paw has crossed threshold for lift, trigger stim 
   - Only need to trigger stim on first detection of threshold crossing (keep a boolean flag per trial of whether stim has been delivered or not)
+- Need to track in a given trial if stim has been triggered or not, only want the first threshold crossing 
 3. Pattern 
 - Hold the logic for communicating with `psychopy` on the pattern display computer 
   - Likely will still be a pre-fixed list of patterns 
 - Basically just instantiate the pattern and send it on via `zmq` 
+- Need to put in some constraints for how to make sure stim only gets triggered once per trial
 4. Visual (Optional) 
 - Could have `fastplotlib` running in real-time and showing the detection as it happens 
   - Might be useful in these initial stages 

@@ -30,7 +30,7 @@ class Generator(ZmqActor):
         # self.sample_rate = 500
 
     def __str__(self):
-        return f"Name: {self.name}, Data: {self.data}"
+        return f"Name: {self.name}, Data: {self.frame}"
 
     def setup(self):
         # check to make sure I mounted the wasabi directory
