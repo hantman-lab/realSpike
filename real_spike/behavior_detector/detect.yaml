@@ -1,0 +1,28 @@
+actors:
+  Generator:
+    package: actors.generator
+    class: Generator
+
+  Detector:
+    package: actors.detector
+    class: Detector
+
+  Pattern:
+    package: actors.patterns
+    class: PatternGenerator
+
+connections:
+  Generator-Detector:
+    sources:
+      - Generator.q_out
+    sinks:
+      - Detector.q_in
+  Detector-Pattern:
+    sources:
+      - Detector.q_out
+    sinks:
+      - Pattern.q_in
+
+
+settings:
+  store_size: 5_000_000_000
