@@ -15,6 +15,9 @@ logger.setLevel(logging.INFO)
 
 PATTERN_PATH = "/home/clewis/repos/realSpike/real_spike/utils/patterns.npy"
 
+# flag to keep track of pattern sent on a given trial
+SENT_PATTERN = False
+
 class PatternGenerator(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,7 +27,7 @@ class PatternGenerator(ZmqActor):
     def setup(self):
         if not hasattr(self, "name"):
             self.name = "Pattern Generator"
-        self.frame_num = 27
+        self.frame_num = 500
         # load the patterns during setup
         self.patterns = np.load(PATTERN_PATH)
 
@@ -35,7 +38,7 @@ class PatternGenerator(ZmqActor):
         port = 5559
         self.socket.bind(f"tcp://{address}:{port}")
 
-        self.latency = LatencyLogger("pattern")
+        self.latency = LatencyLogger("pattern_behavior_detector")
 
         self.improv_logger.info("Completed setup for Pattern Generator")
 
@@ -46,6 +49,11 @@ class PatternGenerator(ZmqActor):
         return 0
 
     def run_step(self):
+        global SENT_PATTERN
+        if SENT_PATTERN:
+            # already sent pattern for this trial, do not send again
+            # need to think of a way to pass this around
+            return
         # want to randomly select a pattern to generate and show
         data_id = None
         t = time.perf_counter_ns()
@@ -55,18 +63,13 @@ class PatternGenerator(ZmqActor):
             pass
 
         if data_id is not None:
-            self.done = False
-            pattern_id = int.from_bytes(self.client.client.get(data_id))
+            lift_detected = int.from_bytes(self.client.client.get(data_id))
             # get the pattern
-            current_pattern = self.patterns[pattern_id]
-
-            if self.frame_num % 100 == 0:
-                # self.improv_logger.info(f"Pattern selected: {pattern_id}")
-
-                # send the pattern to psychopy, only sending 1 pattern every 100 frames
+            if lift_detected:
+                pattern_id = random.randint(0, 28)
+                current_pattern = self.patterns[pattern_id]
+                # send the pattern
                 self.socket.send(current_pattern.ravel().tobytes())
-
-            # self.socket.send(current_pattern.ravel())
 
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)

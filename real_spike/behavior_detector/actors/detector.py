@@ -2,7 +2,7 @@ from improv.actor import ZmqActor
 import logging
 import time
 
-
+import uuid
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -41,6 +41,12 @@ class Detector(ZmqActor):
         return 0
 
     def run_step(self):
+        global LIFT_DETECTED
+        if LIFT_DETECTED:
+            # lift already detected for this trial
+            # reset frame num
+            # update trial num if keeping track of it (undecided for now)
+            return
         data_id = None
         t = time.perf_counter_ns()
         try:
@@ -56,6 +62,20 @@ class Detector(ZmqActor):
             # if lift detection, send control signal to pattern generator
             # have a running flag for if lift has been detected in this trial (once I start going through more and more videos, can track trial number)
             # should also save out which frame in the video I detected lift on so that I can validate with what Reagan has marked)
+            self.frames.append(self.frame)
 
             # for every frame could send a zero or 1 to pattern generator, if 1 that means trigger
+            # TODO: decide if I want to reuse the data_id here or create a new one, create new one for now
+            store_id = str(os.getpid()) + str(uuid.uuid4())
+            if LIFT_DETECTED:
+                detected_value = 1
+                LIFT_DETECTED = True
+            else:
+                detected_value = 0
+
+            self.client.client.set(store_id, detected_value.to_bytes(), nx=True)
+            self.q_out.put(store_id)
+            t2 = time.perf_counter_ns()
+            self.latency.add(self.frame_num, t2 - t)
+            self.frame_num += 1
 

@@ -7,6 +7,7 @@ import numpy as np
 from pathlib import Path
 import sys
 import os
+import cv2
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from real_spike.utils import LatencyLogger, LazyVideo
@@ -45,7 +46,7 @@ class Generator(ZmqActor):
         self.video = LazyVideo(video_path)
 
 
-        assert self.video[0].shape == (290, 448), "Frame shape is not (290, 448). Pre-set crop measurement and bounding box assumptions might not work."
+        assert self.video[0].shape == (290, 448, 3), "Frame shape is not (290, 448, 3). Pre-set crop measurement and bounding box assumptions might not work."
 
         self.improv_logger.info("Completed setup for Generator")
 
@@ -62,6 +63,8 @@ class Generator(ZmqActor):
         t = time.perf_counter_ns()
         # get the next frame
         self.frame = self.video[self.frame_num]
+        # convert to grayscale
+        self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
         # TODO: add crop (need to determine good bounding box first)
         # crop the frame to the pre-specified region (around where the hand rests at cue)
 

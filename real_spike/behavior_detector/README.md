@@ -20,6 +20,8 @@
   - Likely will still be a pre-fixed list of patterns 
 - Basically just instantiate the pattern and send it on via `zmq` 
 - Need to put in some constraints for how to make sure stim only gets triggered once per trial
+  - Keep track of how much power has been put into the system over a certain period of time (do not send anything if exceed) 
+  - Can do this on the psychopy side too!
 4. Visual (Optional) 
 - Could have `fastplotlib` running in real-time and showing the detection as it happens 
   - Might be useful in these initial stages 
@@ -39,4 +41,6 @@
 - [ ] Model comparison
     - Even if I end up in practice only using OpenCV with no deep learning model, still need to implement/use one for ECE 661 class
     - Can do some timing profiling of just doing the detection for comparison 
-- [ ] Making nice figures to go into the final report and also into my prelim exam next Spring 
+- [ ] Making nice figures to go into the final report and also into my prelim exam next Spring
+- [ ] Tests 
+    - Should probably have some tests to make sure functionality is working as expected for various components
