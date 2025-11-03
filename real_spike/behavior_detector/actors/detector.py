@@ -22,7 +22,7 @@ class Detector(ZmqActor):
         self.name = "Detector"
         # start the video from queue
         self.frame_num = 500
-        self.latency = LatencyLogger(name="detector_behavior_detector")
+        self.latency = LatencyLogger(name="detector_behavior_detector", max_size=2_000)
 
         # sample rate = 500Hz
         # self.sample_rate = 500
@@ -33,6 +33,7 @@ class Detector(ZmqActor):
     def setup(self):
         # setup whatever model is being used here
 
+        self.reshape_size = (133, 139)
         self.improv_logger.info("Completed setup for behavior detector")
 
     def stop(self):
@@ -56,8 +57,8 @@ class Detector(ZmqActor):
             pass
 
         if data_id is not None:
-            self.frame = np.frombuffer(self.client.client.get(data_id), np.uint8).reshape(290, 448)
-
+            self.frame = np.frombuffer(self.client.client.get(data_id), np.uint8).reshape(*self.reshape_size)
+            #  .reshape(*self.resize_shape)
             # TODO: model running for lift detection
             # if lift detection, send control signal to pattern generator
             # have a running flag for if lift has been detected in this trial (once I start going through more and more videos, can track trial number)

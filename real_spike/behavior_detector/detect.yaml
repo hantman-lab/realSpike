@@ -11,13 +11,18 @@ actors:
     package: actors.patterns
     class: PatternGenerator
 
+  Visual: # optional
+    package: actors.visual
+    class: Visual
+
 connections:
   Generator-Detector:
     sources:
       - Generator.q_out
     sinks:
       - Detector.q_in
-  Detector-Pattern:
+      - Visual.q_in
+  Detector-Pattern-Visual:
     sources:
       - Detector.q_out
     sinks:

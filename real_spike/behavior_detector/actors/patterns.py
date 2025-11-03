@@ -3,7 +3,7 @@ import logging
 import time
 import numpy as np
 import zmq
-
+import random
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -75,4 +75,4 @@ class PatternGenerator(ZmqActor):
             self.latency.add(self.frame_num, t2 - t)
             self.frame_num += 1
 
-            self.client.client.delete(data_id)
+        #    self.client.client.delete(data_id)

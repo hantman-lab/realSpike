@@ -25,7 +25,7 @@ class Generator(ZmqActor):
         self.name = "Generator"
         # start the video from queue
         self.frame_num = 500
-        self.latency = LatencyLogger(name="generator_behavior_detector")
+        self.latency = LatencyLogger(name="generator_behavior_detector", max_size=2_000)
 
         # sample rate = 500Hz
         # self.sample_rate = 500
@@ -48,10 +48,14 @@ class Generator(ZmqActor):
 
         assert self.video[0].shape == (290, 448, 3), "Frame shape is not (290, 448, 3). Pre-set crop measurement and bounding box assumptions might not work."
 
+        # set crop parameters
+        # in the format (x_min, x_max, y_min, y_max)
+        self.crop = [56, 195, 157, 291]
+
         self.improv_logger.info("Completed setup for Generator")
 
     def stop(self):
-        self.improv_logger.info("Generator stopping")
+        self.improv_logger.info(f"Generator stopping: {self.frame_num} frames generated")
         self.latency.save()
         return 0
 
@@ -60,14 +64,16 @@ class Generator(ZmqActor):
         if self.frame_num == self.video.shape[0] - 1:
             return
 
-        t = time.perf_counter_ns()
         # get the next frame
+        # lazy loading, so do not want to include in timing for right now
+        # will include when actually fetching
         self.frame = self.video[self.frame_num]
+        t = time.perf_counter_ns()
+        # crop the frame to the pre-specified region (around where the hand rests at cue)
+        # y-dim comes first (height, width)
+        self.frame = self.frame[self.crop[2]:self.crop[3], self.crop[0]:self.crop[1]]
         # convert to grayscale
         self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
-        # TODO: add crop (need to determine good bounding box first)
-        # crop the frame to the pre-specified region (around where the hand rests at cue)
-
         # make a data_id
         data_id = str(os.getpid()) + str(uuid.uuid4())
         self.client.client.set(data_id, self.frame.tobytes(), nx=True)
