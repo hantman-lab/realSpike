@@ -27,7 +27,7 @@ class PatternGenerator(ZmqActor):
     def setup(self):
         if not hasattr(self, "name"):
             self.name = "Pattern Generator"
-        self.frame_num = 500
+        self.frame_num = 0
         # load the patterns during setup
         self.patterns = np.load(PATTERN_PATH)
 

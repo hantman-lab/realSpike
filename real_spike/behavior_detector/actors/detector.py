@@ -1,7 +1,7 @@
 from improv.actor import ZmqActor
 import logging
 import time
-
+import cv2
 import uuid
 import sys
 import os
@@ -18,12 +18,13 @@ class Detector(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.frame = None
-        self.frames = list() # store the marked frames from OpenCV to look at after
         self.name = "Detector"
         # start the video from queue
         self.frame_num = 500
-        self.latency = LatencyLogger(name="detector_behavior_detector", max_size=2_000)
-
+        self.latency = LatencyLogger(name="detector_behavior_detector",
+                                     max_size=20_000,
+                                     )
+        self.offset = 0
         # sample rate = 500Hz
         # self.sample_rate = 500
 
@@ -31,9 +32,7 @@ class Detector(ZmqActor):
         return f"Name: {self.name}, Data: {self.frame}"
 
     def setup(self):
-        # setup whatever model is being used here
-
-        self.reshape_size = (133, 139)
+        self.reshape_size = (120, 139)
         self.improv_logger.info("Completed setup for behavior detector")
 
     def stop(self):
@@ -43,11 +42,6 @@ class Detector(ZmqActor):
 
     def run_step(self):
         global LIFT_DETECTED
-        if LIFT_DETECTED:
-            # lift already detected for this trial
-            # reset frame num
-            # update trial num if keeping track of it (undecided for now)
-            return
         data_id = None
         t = time.perf_counter_ns()
         try:
@@ -57,26 +51,57 @@ class Detector(ZmqActor):
             pass
 
         if data_id is not None:
+            if self.frame_num == 799:
+                # trial is over, next frame will be for next trial
+                self.frame_num = 500
+                LIFT_DETECTED = False
+                self.offset += 1
+                return
+
+            if LIFT_DETECTED:
+                # lift already detected for this trial
+                # update frame num
+                self.frame_num += 1
+                return
+
             self.frame = np.frombuffer(self.client.client.get(data_id), np.uint8).reshape(*self.reshape_size)
-            #  .reshape(*self.resize_shape)
-            # TODO: model running for lift detection
-            # if lift detection, send control signal to pattern generator
-            # have a running flag for if lift has been detected in this trial (once I start going through more and more videos, can track trial number)
-            # should also save out which frame in the video I detected lift on so that I can validate with what Reagan has marked)
-            self.frames.append(self.frame)
+
+            if self.frame_num == 500:
+                # first frame for ref
+                self.init_frame = self.frame
+            else:
+                flow = cv2.calcOpticalFlowFarneback(
+                    self.init_frame, self.frame, None,
+                    pyr_scale=0.5, levels=2, winsize=12,
+                    iterations=2, poly_n=3, poly_sigma=1.1, flags=0
+                )
+
+                mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+
+                fx, fy = flow[..., 0], flow[..., 1]
+                angle = np.arctan2(fy, fx) * 180 / np.pi
+
+                mask = (angle > 15) & (angle < 45)
+
+                avg_magnitude = np.mean(mag[mask])
+
+                if avg_magnitude > 3.5:
+                    LIFT_DETECTED = True
+                    self.improv_logger.info(f"LIFT DETECTED: frame {self.frame_num - 500}")
+                    # output detection
+                    with open('/home/clewis/repos/realSpike/data/rb50_20250125_single_reach.txt', 'a') as f:
+                        f.write(f"{self.frame_num - 500}\n")
 
             # for every frame could send a zero or 1 to pattern generator, if 1 that means trigger
-            # TODO: decide if I want to reuse the data_id here or create a new one, create new one for now
             store_id = str(os.getpid()) + str(uuid.uuid4())
             if LIFT_DETECTED:
                 detected_value = 1
-                LIFT_DETECTED = True
             else:
                 detected_value = 0
 
             self.client.client.set(store_id, detected_value.to_bytes(), nx=True)
             self.q_out.put(store_id)
             t2 = time.perf_counter_ns()
-            self.latency.add(self.frame_num, t2 - t)
+            self.latency.add(self.offset + self.frame_num, t2 - t)
             self.frame_num += 1
 

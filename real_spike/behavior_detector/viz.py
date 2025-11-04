@@ -37,7 +37,7 @@ def get_buffer(sub):
 
 "------------------------------------------------------------"
 # define reshape size
-RESHAPE_SIZE = (133, 139)
+RESHAPE_SIZE = (120, 139)
 
 # connect to the viz actor via ZMQ
 sub = connect(port_number=5557)

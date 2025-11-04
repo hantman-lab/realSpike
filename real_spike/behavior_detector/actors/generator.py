@@ -8,6 +8,7 @@ from pathlib import Path
 import sys
 import os
 import cv2
+import h5py
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from real_spike.utils import LatencyLogger, LazyVideo
@@ -25,7 +26,9 @@ class Generator(ZmqActor):
         self.name = "Generator"
         # start the video from queue
         self.frame_num = 500
-        self.latency = LatencyLogger(name="generator_behavior_detector", max_size=2_000)
+        self.latency = LatencyLogger(name="generator_behavior_detector",
+                                     max_size=20_000,
+                                    )
 
         # sample rate = 500Hz
         # self.sample_rate = 500
@@ -38,21 +41,43 @@ class Generator(ZmqActor):
         if not video_dir.is_dir():
             raise FileNotFoundError(f"Video directory {video_dir} not found. Directory needs to be mounted from Wasabi.")
 
-        # for now, just process 1 video
-        idx = 18 # index of single-reach trial in this dataset
-        video_path = video_dir.joinpath(f"rb50_20250125_side_v0{idx + 1}.avi") # zero-indexing in python vs. trial indexing; add 1
+        # get single_reach idxs of all videos
+        single_reach = h5py.File("/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb50/20250125/MAT_FILES/rb50_20250125_datastruct_pt3.mat", 'r')['data']['single']
+        self.idxs = np.where(single_reach)[0]
 
+        self.__iter__()
         # use lazy video to make array for reading frames from disk during run step
-        self.video = LazyVideo(video_path)
-
+        self.video = next(self)
+        self.offset = 0
 
         assert self.video[0].shape == (290, 448, 3), "Frame shape is not (290, 448, 3). Pre-set crop measurement and bounding box assumptions might not work."
 
         # set crop parameters
         # in the format (x_min, x_max, y_min, y_max)
-        self.crop = [56, 195, 157, 291]
+        self.crop = [56, 195, 170, 291]
 
         self.improv_logger.info("Completed setup for Generator")
+
+    def __iter__(self):
+        self._current_iter = iter(range(self.idxs.shape[0]))
+        return self
+
+    def __next__(self):
+        try:
+            i = self._current_iter.__next__()
+        except StopIteration:
+            self.video = None
+            return
+        idx = self.idxs[i]
+        if idx < 9:
+            num = f"00{idx + 1}"
+        elif idx < 99:
+            num = f"0{idx + 1}"
+        else:
+            num = str(idx)
+
+        video_path = video_dir.joinpath(f"rb50_20250125_side_v{num}.avi") # zero-indexing in python vs. trial indexing; add 1
+        return LazyVideo(video_path)
 
     def stop(self):
         self.improv_logger.info(f"Generator stopping: {self.frame_num} frames generated")
@@ -60,9 +85,16 @@ class Generator(ZmqActor):
         return 0
 
     def run_step(self):
-        # at end of video, stop running
-        if self.frame_num == self.video.shape[0] - 1:
+        if self.video is None:
+            # iterated through all
             return
+        if self.frame_num == 800:
+            # get next video
+            self.frame_num = 500
+            self.video = next(self)
+            if self.video is None:
+                return
+            self.offset += 1
 
         # get the next frame
         # lazy loading, so do not want to include in timing for right now
@@ -80,7 +112,7 @@ class Generator(ZmqActor):
         try:
             self.q_out.put(data_id)
             t2 = time.perf_counter_ns()
-            self.latency.add(self.frame_num, t2-t)
+            self.latency.add(self.frame_num + self.offset, t2-t)
             self.frame_num += 1
 
         except Exception as e:

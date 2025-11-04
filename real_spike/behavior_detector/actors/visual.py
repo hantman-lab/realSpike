@@ -24,7 +24,7 @@ class Visual(ZmqActor):
         self.frame_num = 500
         self.frame = None
 
-        self.reshape_size = (133, 139)
+        self.reshape_size = (120, 139)
 
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
