@@ -1,3 +1,5 @@
+import pickle
+
 from improv.actor import ZmqActor
 import logging
 import time
@@ -25,6 +27,8 @@ class Detector(ZmqActor):
                                      max_size=20_000,
                                      )
         self.offset = 0
+        self.all_magnitudes = list()
+        self.trial_magnitudes = list()
         # sample rate = 500Hz
         # self.sample_rate = 500
 
@@ -33,17 +37,24 @@ class Detector(ZmqActor):
 
     def setup(self):
         self.reshape_size = (120, 139)
+
+        # reset the text file
+        with open('/home/clewis/repos/realSpike/data/rb50_20250125_single_reach.txt', 'w') as file_object:
+            pass
         self.improv_logger.info("Completed setup for behavior detector")
 
     def stop(self):
         self.improv_logger.info("Detector stopping")
         self.latency.save()
+        # save the magnitude traces to plot
+        with open("/home/clewis/repos/realSpike/data/rb50_20250125_single_reach_mags.pk1", "wb") as f:
+            pickle.dump(self.all_magnitudes, f)
         return 0
 
     def run_step(self):
         global LIFT_DETECTED
         data_id = None
-        t = time.perf_counter_ns()
+
         try:
             # get data_id from queue in
             data_id = self.q_in.get(timeout=0.05)
@@ -54,10 +65,17 @@ class Detector(ZmqActor):
             if self.frame_num == 799:
                 # trial is over, next frame will be for next trial
                 self.frame_num = 500
+                if not LIFT_DETECTED:
+                    with open('/home/clewis/repos/realSpike/data/rb50_20250125_single_reach.txt', 'a') as f:
+                        f.write(f"LIFT NOT DETECTED\n")
+                    self.improv_logger.info(f"LIFT NOT DETECTED")
                 LIFT_DETECTED = False
                 self.offset += 1
+                self.all_magnitudes.append(self.trial_magnitudes)
+                self.trial_magnitudes = list()
                 return
 
+            t = time.perf_counter_ns()
             if LIFT_DETECTED:
                 # lift already detected for this trial
                 # update frame num
@@ -84,6 +102,7 @@ class Detector(ZmqActor):
                 mask = (angle > 15) & (angle < 45)
 
                 avg_magnitude = np.mean(mag[mask])
+                self.trial_magnitudes.append(avg_magnitude)
 
                 if avg_magnitude > 3.5:
                     LIFT_DETECTED = True
