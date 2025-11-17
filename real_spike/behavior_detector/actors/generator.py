@@ -16,8 +16,11 @@ from real_spike.utils import LatencyLogger, LazyVideo
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# toggle for which behavior to detect
+GRAB = True
+
 # use session rb50/20250125
-video_dir = Path("/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb50/20250125/videos/")
+video_dir = Path("/home/clewis/repos/holo-nbs/data/videos/")
 
 class Generator(ZmqActor):
     def __init__(self, *args, **kwargs):
@@ -25,13 +28,10 @@ class Generator(ZmqActor):
         self.frame = None
         self.name = "Generator"
         # start the video from queue
-        self.frame_num = 500
+        self.frame_num = 600
         self.latency = LatencyLogger(name="generator_behavior_detector",
                                      max_size=20_000,
                                     )
-
-        # sample rate = 500Hz
-        # self.sample_rate = 500
 
     def __str__(self):
         return f"Name: {self.name}, Data: {self.frame}"
@@ -54,7 +54,11 @@ class Generator(ZmqActor):
 
         # set crop parameters
         # in the format (x_min, x_max, y_min, y_max)
-        self.crop = [56, 195, 170, 291]
+        if GRAB:
+             # [128:139, 250:254]
+            self.crop = [250, 254, 128, 139]
+        else:
+            self.crop = [56, 195, 170, 291]
 
         self.improv_logger.info("Completed setup for Generator")
 
@@ -74,7 +78,7 @@ class Generator(ZmqActor):
         elif idx < 99:
             num = f"0{idx + 1}"
         else:
-            num = str(idx)
+            num = str(idx+1)
 
         video_path = video_dir.joinpath(f"rb50_20250125_side_v{num}.avi") # zero-indexing in python vs. trial indexing; add 1
         return LazyVideo(video_path)
@@ -88,9 +92,9 @@ class Generator(ZmqActor):
         if self.video is None:
             # iterated through all
             return
-        if self.frame_num == 800:
+        if self.frame_num == 850:
             # get next video
-            self.frame_num = 500
+            self.frame_num = 600
             self.video = next(self)
             if self.video is None:
                 return
@@ -101,11 +105,10 @@ class Generator(ZmqActor):
         # will include when actually fetching
         self.frame = self.video[self.frame_num]
         t = time.perf_counter_ns()
-        # crop the frame to the pre-specified region (around where the hand rests at cue)
-        # y-dim comes first (height, width)
-        self.frame = self.frame[self.crop[2]:self.crop[3], self.crop[0]:self.crop[1]]
         # convert to grayscale
         self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
+        # y-dim comes first (height, width)
+        self.frame = self.frame[self.crop[2]:self.crop[3], self.crop[0]:self.crop[1]]
         # make a data_id
         data_id = str(os.getpid()) + str(uuid.uuid4())
         self.client.client.set(data_id, self.frame.tobytes(), nx=True)

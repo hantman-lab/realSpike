@@ -16,21 +16,19 @@ logger.setLevel(logging.INFO)
 
 LIFT_DETECTED = False
 
-class Detector(ZmqActor):
+class LiftDetector(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.frame = None
         self.name = "Detector"
         # start the video from queue
         self.frame_num = 500
-        self.latency = LatencyLogger(name="detector_behavior_detector",
+        self.latency = LatencyLogger(name="lift_behavior_detector",
                                      max_size=20_000,
                                      )
         self.offset = 0
         self.all_magnitudes = list()
         self.trial_magnitudes = list()
-        # sample rate = 500Hz
-        # self.sample_rate = 500
 
     def __str__(self):
         return f"Name: {self.name}, Data: {self.frame}"
@@ -39,7 +37,7 @@ class Detector(ZmqActor):
         self.reshape_size = (120, 139)
 
         # reset the text file
-        with open('/home/clewis/repos/realSpike/data/rb50_20250125_single_reach.txt', 'w') as file_object:
+        with open('/data/rb50_20250125_single_reach.txt', 'w') as file_object:
             pass
         self.improv_logger.info("Completed setup for behavior detector")
 
@@ -66,7 +64,7 @@ class Detector(ZmqActor):
                 # trial is over, next frame will be for next trial
                 self.frame_num = 500
                 if not LIFT_DETECTED:
-                    with open('/home/clewis/repos/realSpike/data/rb50_20250125_single_reach.txt', 'a') as f:
+                    with open('/data/rb50_20250125_single_reach.txt', 'a') as f:
                         f.write(f"LIFT NOT DETECTED\n")
                     self.improv_logger.info(f"LIFT NOT DETECTED")
                 LIFT_DETECTED = False
@@ -108,7 +106,7 @@ class Detector(ZmqActor):
                     LIFT_DETECTED = True
                     self.improv_logger.info(f"LIFT DETECTED: frame {self.frame_num - 500}")
                     # output detection
-                    with open('/home/clewis/repos/realSpike/data/rb50_20250125_single_reach.txt', 'a') as f:
+                    with open('/data/rb50_20250125_single_reach.txt', 'a') as f:
                         f.write(f"{self.frame_num - 500}\n")
 
             # for every frame could send a zero or 1 to pattern generator, if 1 that means trigger

@@ -11,6 +11,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+GRAB = True
 
 class Visual(ZmqActor):
     def __init__(self, *args, **kwargs):

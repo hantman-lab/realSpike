@@ -4,16 +4,16 @@ actors:
     class: Generator
 
   Detector:
-    package: actors.detector
-    class: Detector
+    package: actors.grab_detector
+    class: GrabDetector
 
   Pattern:
     package: actors.patterns
     class: PatternGenerator
 
-  Visual: # optional
-    package: actors.visual
-    class: Visual
+#  Visual: # optional
+#    package: actors.visual
+#    class: Visual
 
 connections:
   Generator-Detector:
@@ -21,8 +21,8 @@ connections:
       - Generator.q_out
     sinks:
       - Detector.q_in
-      - Visual.q_in
-  Detector-Pattern-Visual:
+#      - Visual.q_in
+  Detector-Pattern:
     sources:
       - Detector.q_out
     sinks:
