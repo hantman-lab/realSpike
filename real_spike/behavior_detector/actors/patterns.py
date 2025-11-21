@@ -15,9 +15,6 @@ logger.setLevel(logging.INFO)
 
 PATTERN_PATH = "/home/clewis/repos/realSpike/real_spike/utils/patterns.npy"
 
-# flag to keep track of pattern sent on a given trial
-SENT_PATTERN = False
-
 class PatternGenerator(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,7 +35,7 @@ class PatternGenerator(ZmqActor):
         port = 5559
         self.socket.bind(f"tcp://{address}:{port}")
 
-        self.latency = LatencyLogger("pattern_behavior_detector")
+        self.latency = LatencyLogger("grab_pattern_behavior_detector")
 
         self.improv_logger.info("Completed setup for Pattern Generator")
 
@@ -49,11 +46,6 @@ class PatternGenerator(ZmqActor):
         return 0
 
     def run_step(self):
-        global SENT_PATTERN
-        if SENT_PATTERN:
-            # already sent pattern for this trial, do not send again
-            # need to think of a way to pass this around
-            return
         # want to randomly select a pattern to generate and show
         data_id = None
         t = time.perf_counter_ns()
@@ -63,13 +55,16 @@ class PatternGenerator(ZmqActor):
             pass
 
         if data_id is not None:
-            lift_detected = int(self.client.client.get(data_id))
+            detected = int(self.client.client.get(data_id))
             # get the pattern
-            if lift_detected:
+            if detected == 1:
                 pattern_id = random.randint(0, 28)
                 current_pattern = self.patterns[pattern_id]
                 # send the pattern
-                self.socket.send(current_pattern.ravel().tobytes())
+                self.improv_logger.info("SENDING PATTERN")
+                # TODO: Something weird going on when sending the pattern, might be because I don't actually have
+                #  psychopy running should try it soon on other computer 11/21/25
+                #self.socket.send(current_pattern.ravel().tobytes())
 
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)

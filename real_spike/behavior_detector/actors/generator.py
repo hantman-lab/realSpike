@@ -112,7 +112,7 @@ class Generator(ZmqActor):
         # lazy loading, so do not want to include in timing for right now
         # will include when actually fetching
         # inclusion of frame rate 500Hz, 1 frame every
-        time.sleep(0.002)
+        #time.sleep(0.002)
         self.frame = self.video[self.frame_num]
         t = time.perf_counter_ns()
         # convert to grayscale

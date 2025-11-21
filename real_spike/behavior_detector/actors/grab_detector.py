@@ -96,7 +96,7 @@ class GrabDetector(ZmqActor):
                 detected_value = 0
 
             self.client.client.set(store_id, detected_value, nx=False)
-            self.client.client.expire(store_id, 5)
+            self.client.client.expire(store_id, 15)
             self.q_out.put(store_id)
             t2 = time.perf_counter_ns()
             self.latency.add(self.offset + self.frame_num, t2 - t)
