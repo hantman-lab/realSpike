@@ -56,7 +56,7 @@ class GrabDetector(ZmqActor):
 
         if data_id is not None:
             t = time.perf_counter_ns()
-            data = np.frombuffer(self.client.client.get(data_id), np.uint64)
+            data = np.frombuffer(self.client.client.get(data_id), np.uint16)
             self.frame_num = data[-1]
             self.frame = data[:-1].reshape(*self.reshape_size)
 
@@ -72,8 +72,6 @@ class GrabDetector(ZmqActor):
 
             if GRAB_DETECTED:
                 # grab already detected for this trial
-                # update frame num
-                self.frame_num += 1
                 return
 
             # y-dim comes first (height, width)

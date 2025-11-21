@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # toggle for which behavior to detect
-GRAB = True
+GRAB = False
 
 # use session rb50/20250125
 video_dir = Path("/home/clewis/repos/holo-nbs/data/videos/")
@@ -30,9 +30,11 @@ class Generator(ZmqActor):
         # start the video from queue
         if GRAB:
             self.frame_num = 600 # grabs start later
+            _ = "grab"
         else:
             self.frame_num = 500
-        self.latency = LatencyLogger(name="generator_behavior_detector",
+            _ = "lift"
+        self.latency = LatencyLogger(name=f"generator_behavior_detector_{_}",
                                      max_size=20_000,
                                     )
 
@@ -44,27 +46,22 @@ class Generator(ZmqActor):
         if not video_dir.is_dir():
             raise FileNotFoundError(f"Video directory {video_dir} not found.")
 
+        data = h5py.File("/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb50/20250125/MAT_FILES/rb50_20250125_datastruct_pt3.mat", 'r')['data']
         # get single_reach idxs of all videos
-        single_reach = h5py.File("/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb50/20250125/MAT_FILES/rb50_20250125_datastruct_pt3.mat", 'r')['data']['single']
+        single_reach = data['single']
         self.idxs = np.where(single_reach)[0]
 
-        self.grabs = h5py.File("/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb50/20250125/MAT_FILES/rb50_20250125_datastruct_pt3.mat", 'r')['data']['grab_ms']
 
+        if GRAB:
+            self.grabs = data['grab_ms']
+        else:
+            self.lifts = data['lift_ms']
         self.i = 0
         # use lazy video to make array for reading frames from disk during run step
         self.video = self.get_video()
         self.offset = 0
 
         assert self.video[0].shape == (290, 448, 3), "Frame shape is not (290, 448, 3). Pre-set crop measurement and bounding box assumptions might not work."
-
-        # set crop parameters
-        # in the format (x_min, x_max, y_min, y_max)
-        # if GRAB:
-        #      # [128:139, 250:254]
-        #     self.crop = [250, 254, 128, 139]
-        # else:
-        #     self.crop = [56, 195, 170, 291]
-
 
         self.improv_logger.info("Completed setup for Generator")
 
@@ -75,7 +72,10 @@ class Generator(ZmqActor):
 
         idx = self.idxs[self.i]
         self.improv_logger.info(f"Trial: {idx}")
-        self.improv_logger.info(f"ACTUAL: {500 + self.grabs[idx] / 2}")
+        if GRAB:
+            self.improv_logger.info(f"ACTUAL: {500 + self.grabs[idx] / 2}")
+        else:
+            self.improv_logger.info(f"ACTUAL: {500 + self.lifts[idx] / 2}")
         if idx < 9:
             num = f"00{idx + 1}"
         elif idx < 99:
@@ -116,17 +116,17 @@ class Generator(ZmqActor):
         self.frame = self.video[self.frame_num]
         t = time.perf_counter_ns()
         # convert to grayscale
-        self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY).astype(np.uint64)
+        self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY).astype(np.uint16)
         # make a data_id
         data_id = str(os.getpid()) + str(uuid.uuid4())
 
-        data = np.append(self.frame.ravel(), self.frame_num).astype(np.uint64)
+        data = np.append(self.frame.ravel(), self.frame_num).astype(np.uint16)
         self.client.client.set(data_id, data.tobytes(), nx=False)
-        self.client.client.expire(data_id, 5)
         try:
             self.q_out.put(data_id)
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num + self.offset, t2-t)
+            self.client.client.expire(data_id, 5)
             self.frame_num += 1
 
         except Exception as e:

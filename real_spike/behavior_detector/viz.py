@@ -65,7 +65,7 @@ def update_figure(p):
     buff = get_buffer(sub)
     if buff is not None:
         # Deserialize the buffer into a NumPy array
-        data = np.frombuffer(buff, dtype=np.uint64)
+        data = np.frombuffer(buff, dtype=np.uint16)
         data = data[:-1]
 
         data = data.reshape(*RESHAPE_SIZE)
