@@ -28,7 +28,10 @@ class Generator(ZmqActor):
         self.frame = None
         self.name = "Generator"
         # start the video from queue
-        self.frame_num = 600
+        if GRAB:
+            self.frame_num = 600 # grabs start later
+        else:
+            self.frame_num = 500
         self.latency = LatencyLogger(name="generator_behavior_detector",
                                      max_size=20_000,
                                     )
@@ -39,40 +42,40 @@ class Generator(ZmqActor):
     def setup(self):
         # check to make sure I mounted the wasabi directory
         if not video_dir.is_dir():
-            raise FileNotFoundError(f"Video directory {video_dir} not found. Directory needs to be mounted from Wasabi.")
+            raise FileNotFoundError(f"Video directory {video_dir} not found.")
 
         # get single_reach idxs of all videos
         single_reach = h5py.File("/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb50/20250125/MAT_FILES/rb50_20250125_datastruct_pt3.mat", 'r')['data']['single']
         self.idxs = np.where(single_reach)[0]
 
-        self.__iter__()
+        self.grabs = h5py.File("/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb50/20250125/MAT_FILES/rb50_20250125_datastruct_pt3.mat", 'r')['data']['grab_ms']
+
+        self.i = 0
         # use lazy video to make array for reading frames from disk during run step
-        self.video = next(self)
+        self.video = self.get_video()
         self.offset = 0
 
         assert self.video[0].shape == (290, 448, 3), "Frame shape is not (290, 448, 3). Pre-set crop measurement and bounding box assumptions might not work."
 
         # set crop parameters
         # in the format (x_min, x_max, y_min, y_max)
-        if GRAB:
-             # [128:139, 250:254]
-            self.crop = [250, 254, 128, 139]
-        else:
-            self.crop = [56, 195, 170, 291]
+        # if GRAB:
+        #      # [128:139, 250:254]
+        #     self.crop = [250, 254, 128, 139]
+        # else:
+        #     self.crop = [56, 195, 170, 291]
+
 
         self.improv_logger.info("Completed setup for Generator")
 
-    def __iter__(self):
-        self._current_iter = iter(range(self.idxs.shape[0]))
-        return self
-
-    def __next__(self):
-        try:
-            i = self._current_iter.__next__()
-        except StopIteration:
+    def get_video(self):
+        if self.i > self.idxs.shape[0] - 1:
             self.video = None
             return
-        idx = self.idxs[i]
+
+        idx = self.idxs[self.i]
+        self.improv_logger.info(f"Trial: {idx}")
+        self.improv_logger.info(f"ACTUAL: {500 + self.grabs[idx] / 2}")
         if idx < 9:
             num = f"00{idx + 1}"
         elif idx < 99:
@@ -94,24 +97,32 @@ class Generator(ZmqActor):
             return
         if self.frame_num == 850:
             # get next video
-            self.frame_num = 600
-            self.video = next(self)
+            if GRAB:
+                self.frame_num = 600
+            else:
+                self.frame_num = 500
+            self.i += 1
+            self.video = self.get_video()
             if self.video is None:
                 return
-            self.offset += 1
+            self.offset = 250 * self.i
+            return
 
         # get the next frame
         # lazy loading, so do not want to include in timing for right now
         # will include when actually fetching
+        # inclusion of frame rate 500Hz, 1 frame every
+        time.sleep(0.002)
         self.frame = self.video[self.frame_num]
         t = time.perf_counter_ns()
         # convert to grayscale
-        self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
-        # y-dim comes first (height, width)
-        self.frame = self.frame[self.crop[2]:self.crop[3], self.crop[0]:self.crop[1]]
+        self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY).astype(np.uint64)
         # make a data_id
         data_id = str(os.getpid()) + str(uuid.uuid4())
-        self.client.client.set(data_id, self.frame.tobytes(), nx=True)
+
+        data = np.append(self.frame.ravel(), self.frame_num).astype(np.uint64)
+        self.client.client.set(data_id, data.tobytes(), nx=False)
+        self.client.client.expire(data_id, 5)
         try:
             self.q_out.put(data_id)
             t2 = time.perf_counter_ns()

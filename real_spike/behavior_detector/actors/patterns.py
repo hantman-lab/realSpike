@@ -63,7 +63,7 @@ class PatternGenerator(ZmqActor):
             pass
 
         if data_id is not None:
-            lift_detected = int.from_bytes(self.client.client.get(data_id))
+            lift_detected = int(self.client.client.get(data_id))
             # get the pattern
             if lift_detected:
                 pattern_id = random.randint(0, 28)

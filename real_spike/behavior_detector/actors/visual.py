@@ -22,10 +22,11 @@ class Visual(ZmqActor):
     def setup(self):
         if not hasattr(self, "name"):
             self.name = "Visual"
-        self.frame_num = 500
+        self.frame_num = 600
         self.frame = None
 
-        self.reshape_size = (120, 139)
+        #self.reshape_size = (11, 4)
+        self.reshape_size =  (290, 448)
 
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)

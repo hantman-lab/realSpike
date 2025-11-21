@@ -20,7 +20,7 @@ class GrabDetector(ZmqActor):
         self.frame = None
         self.name = "Detector"
         # start the video from queue
-        self.frame_num = 600
+        self.frame_num = None
         self.latency = LatencyLogger(name="grab_behavior_detector",
                                      max_size=20_000,
                                      )
@@ -31,7 +31,8 @@ class GrabDetector(ZmqActor):
         return f"Name: {self.name}, Data: {self.frame}"
 
     def setup(self):
-        self.reshape_size = (11, 4)
+        self.reshape_size = (290, 448)
+        self.crop = [250, 254, 128, 139]
 
         # reset the text file
         with open('/home/clewis/repos/realSpike/data/rb50_20250125_single_reach_grab.txt', 'w') as file_object:
@@ -54,26 +55,29 @@ class GrabDetector(ZmqActor):
             pass
 
         if data_id is not None:
-            if self.frame_num == 850:
-                # trial is over, next frame will be for next trial
-                self.frame_num = 600
+            t = time.perf_counter_ns()
+            data = np.frombuffer(self.client.client.get(data_id), np.uint64)
+            self.frame_num = data[-1]
+            self.frame = data[:-1].reshape(*self.reshape_size)
+
+            if self.frame_num == 849:
                 if not GRAB_DETECTED:
                     with open('/home/clewis/repos/realSpike/data/rb50_20250125_single_reach_grab.txt', 'a') as f:
                         f.write(f"GRAB NOT DETECTED\n")
                     self.improv_logger.info(f"GRAB NOT DETECTED")
                 GRAB_DETECTED = False
-                self.offset += 1
+                self.offset += 250
                 self.counter = 0
                 return
 
-            t = time.perf_counter_ns()
             if GRAB_DETECTED:
                 # grab already detected for this trial
                 # update frame num
                 self.frame_num += 1
                 return
 
-            self.frame = np.frombuffer(self.client.client.get(data_id), np.uint8).reshape(*self.reshape_size)
+            # y-dim comes first (height, width)
+            self.frame = self.frame[self.crop[2]:self.crop[3], self.crop[0]:self.crop[1]]
 
             if (self.frame != 0).sum() >= 41:
                 self.counter += 1
@@ -91,8 +95,8 @@ class GrabDetector(ZmqActor):
             else:
                 detected_value = 0
 
-            self.client.client.set(store_id, detected_value.to_bytes(), nx=True)
+            self.client.client.set(store_id, detected_value, nx=False)
+            self.client.client.expire(store_id, 5)
             self.q_out.put(store_id)
             t2 = time.perf_counter_ns()
             self.latency.add(self.offset + self.frame_num, t2 - t)
-            self.frame_num += 1

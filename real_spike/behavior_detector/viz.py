@@ -37,7 +37,7 @@ def get_buffer(sub):
 
 "------------------------------------------------------------"
 # define reshape size
-RESHAPE_SIZE = (120, 139)
+RESHAPE_SIZE = (290, 448)
 
 # connect to the viz actor via ZMQ
 sub = connect(port_number=5557)
@@ -45,7 +45,7 @@ sub = connect(port_number=5557)
 "------------------------------------------------------------"
 
 # setup figure
-figure = fpl.Figure(size=(600, 1_000),
+figure = fpl.Figure(size=(1_000, 600),
                 names=["side"])
 
 for sp in figure:
@@ -62,13 +62,11 @@ def update_figure(p):
     global IMAGE
     global i
 
-    if i > 299:
-        return
-
     buff = get_buffer(sub)
     if buff is not None:
         # Deserialize the buffer into a NumPy array
-        data = np.frombuffer(buff, dtype=np.uint8)
+        data = np.frombuffer(buff, dtype=np.uint64)
+        data = data[:-1]
 
         data = data.reshape(*RESHAPE_SIZE)
 
