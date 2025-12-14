@@ -4,7 +4,7 @@ actors:
     class: Generator
 
   Detector:
-    package: actors.lift_detector_yolo
+    package: actors.lift_detector
     class: LiftDetector
 
   Pattern:
