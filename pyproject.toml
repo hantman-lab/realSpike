@@ -19,7 +19,12 @@ dependencies = [
     "scipy",
     "tifffile",
     "pandas",
-    "decord"
+    "decord",
+    "matplotlib",
+    "h5py",
+    "pathlib",
+    "numpy",
+    "tqdm"
 ]
 
 [project.optional-dependencies]
