@@ -1,5 +1,9 @@
+"""
+Actor for generating frames from disk at 500Hz. Will run through all trials for sessions 25, 26, and 27 for animal
+rb50. There are roughly 400 trials. Can toggle between detecting for grab vs. lift.
+"""
+
 from improv.actor import ZmqActor
-import tifffile
 import logging
 import time
 import uuid
@@ -8,7 +12,7 @@ from pathlib import Path
 import sys
 import os
 import cv2
-import h5py
+import pandas as pd
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from real_spike.utils import LatencyLogger, LazyVideo
@@ -19,7 +23,6 @@ logger.setLevel(logging.INFO)
 # toggle for which behavior to detect
 GRAB = False
 
-# use session rb50/20250125
 video_dir = Path("/home/clewis/repos/holo-nbs/data/videos/")
 
 class Generator(ZmqActor):
@@ -34,7 +37,7 @@ class Generator(ZmqActor):
         else:
             self.frame_num = 500
             _ = "lift"
-        self.latency = LatencyLogger(name=f"generator_behavior_detector_{_}",
+        self.latency = LatencyLogger(name=f"generator_behavior_detector_{_}_disk",
                                      max_size=20_000,
                                     )
 
@@ -46,16 +49,21 @@ class Generator(ZmqActor):
         if not video_dir.is_dir():
             raise FileNotFoundError(f"Video directory {video_dir} not found.")
 
-        data = h5py.File("/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb50/20250125/MAT_FILES/rb50_20250125_datastruct_pt3.mat", 'r')['data']
-        # get single_reach idxs of all videos
-        single_reach = data['single']
-        self.idxs = np.where(single_reach)[0]
+        # load the ground truth dataframe to get the trials from all the session
+        self.df = pd.read_hdf("/home/clewis/repos/holo-nbs/data/videos/ground_truth_rb50.h5")
 
+        # need to get all of the idxs for all of the sessions
+        self.idxs = list()
+        # make a tuple of every session/idx pair
+        for i, j in zip(self.df.loc[:, "session_id"], self.df.loc[:, "trial_no"]):
+            self.idxs.append((i, j))
 
         if GRAB:
-            self.grabs = data['grab_ms']
+            self.grabs = self.df.loc[:, 'grab_ms']
         else:
-            self.lifts = data['lift_ms']
+            self.lifts = self.df.loc[:, 'lift_ms']
+
+        self.improv_logger.info(self.idxs)
         self.i = 0
         # use lazy video to make array for reading frames from disk during run step
         self.video = self.get_video()
@@ -66,16 +74,17 @@ class Generator(ZmqActor):
         self.improv_logger.info("Completed setup for Generator")
 
     def get_video(self):
-        if self.i > self.idxs.shape[0] - 1:
+        if self.i > len(self.idxs) - 1:
             self.video = None
             return
 
-        idx = self.idxs[self.i]
-        self.improv_logger.info(f"Trial: {idx}")
+        session = self.idxs[self.i][0]
+        idx = self.idxs[self.i][1]
+        self.improv_logger.info(f"Session: {session}, Trial: {idx}")
         if GRAB:
-            self.improv_logger.info(f"ACTUAL: {500 + self.grabs[idx] / 2}")
+            self.improv_logger.info(f"ACTUAL: {self.grabs[self.i]}")
         else:
-            self.improv_logger.info(f"ACTUAL: {500 + self.lifts[idx] / 2}")
+            self.improv_logger.info(f"ACTUAL: {self.lifts[self.i]}")
         if idx < 9:
             num = f"00{idx + 1}"
         elif idx < 99:
@@ -83,7 +92,7 @@ class Generator(ZmqActor):
         else:
             num = str(idx+1)
 
-        video_path = video_dir.joinpath(f"rb50_20250125_side_v{num}.avi") # zero-indexing in python vs. trial indexing; add 1
+        video_path = video_dir.joinpath(f"rb50_{session}").joinpath(f"rb50_{session}_side_v{num}.avi") # zero-indexing in python vs. trial indexing; add 1
         return LazyVideo(video_path)
 
     def stop(self):

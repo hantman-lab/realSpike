@@ -36,7 +36,7 @@ class LiftDetector(ZmqActor):
         self.crop = [136, 155, 207, 220]
 
         # reset the text file
-        with open('/home/clewis/repos/realSpike/data/rb50_20250125_single_reach_lift.txt', 'w') as file_object:
+        with open('/home/clewis/repos/realSpike/data/rb50_lift.txt', 'w') as file_object:
             pass
         self.improv_logger.info("Completed setup for behavior detector")
 
@@ -63,7 +63,7 @@ class LiftDetector(ZmqActor):
 
             if self.frame_num == 849:
                 if not LIFT_DETECTED:
-                    with open('/home/clewis/repos/realSpike/data/rb50_20250125_single_reach_lift.txt', 'a') as f:
+                    with open('/home/clewis/repos/realSpike/data/rb50_lift.txt', 'a') as f:
                         f.write(f"LIFT NOT DETECTED\n")
                     self.improv_logger.info(f"LIFT NOT DETECTED")
                 LIFT_DETECTED = False
@@ -82,7 +82,7 @@ class LiftDetector(ZmqActor):
                 LIFT_DETECTED = True
                 self.improv_logger.info(f"LIFT DETECTED: frame {self.frame_num}")
                 # output detection
-                with open('/home/clewis/repos/realSpike/data/rb50_20250125_single_reach_lift.txt', 'a') as f:
+                with open('/home/clewis/repos/realSpike/data/rb50_lift.txt', 'a') as f:
                     f.write(f"{self.frame_num}\n")
 
             # for every frame could send a zero or 1 to pattern generator, if 1 that means trigger

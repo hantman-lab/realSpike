@@ -1,6 +1,6 @@
 actors:
   Generator:
-    package: actors.generator
+    package: actors.generator_disk
     class: Generator
 
   Detector:
