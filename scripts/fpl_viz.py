@@ -1,14 +1,11 @@
+#import real_spike as rsp
+
 import fastplotlib as fpl
 import queue
-import pickle
+#import zmq
+import numpy as np
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from real_spike.utils import *
-
-"----------------------------------------------------------------------------------------------------------------------"
 # specify num channels to expect
 NUM_CHANNELS = 150
 # number of ms to display at one time
@@ -21,8 +18,16 @@ median = np.load("/home/clewis/repos/realSpike/real_spike/acquisition/medians.np
 # initialize a queue
 viz_queue = queue.Queue(maxsize=5_000)
 
-# connect to the viz actor via ZMQ
-sub = connect(port_number=5557)
+# # connect to the viz actor via ZMQ
+# context = zmq.Context()
+# sub = context.socket(zmq.PULL)
+# address = "localhost"
+# port_number = 5557
+#
+# # address must match publisher in actor
+# sub.connect(f"tcp://{address}:{port_number}")
+#
+# print(f"Made connection on port {port_number} at address {address}")
 
 # initialize colors for each channel
 COLORS = np.random.rand(NUM_CHANNELS, 4) # [n_colors, rgba] array
@@ -40,7 +45,7 @@ for subplot in figure:
     subplot.camera.maintain_aspect = False
 
 "----------------------------------------------------------------------------------------------------------------------"
-SAVED = False
+
 
 def update():
     """Function to actual update the figure."""
@@ -86,7 +91,7 @@ def update():
         # set last 10 indices using most recent 1ms lg[i].data[40:, 1] = chunk
 
     # get the spike times
-    ixs, _ = get_spike_events(data, median)
+    ixs, _ = rsp.get_spike_events(data, median)
 
 
     # color each spike event orange
@@ -96,7 +101,7 @@ def update():
         lg[i].colors[ixs[i]] = "orange"
 
     # make a raster plot using the pre-defined channel colors
-    spikes, colors = make_raster(ixs, COLORS)
+    spikes, colors = rsp.make_raster(ixs, COLORS)
     spikes = np.concatenate(spikes)
 
     # clear the old raster plot
@@ -112,8 +117,13 @@ def update_figure(p):
     """Fetch the data from the socket, deserialize it, and put it in the queue for visualization."""
     global viz_queue
     global i
+    buff = None
 
-    buff = get_buffer(sub)
+    # try:
+    #     buff = sub.recv(zmq.NOBLOCK)
+    # except zmq.Again:
+    #     pass
+
     if buff is not None:
         i += 1
         # Deserialize the buffer into a NumPy array
@@ -135,7 +145,7 @@ def update_figure(p):
 
 figure.show()
 
-figure.add_animations(update_figure)
+#figure.add_animations(update_figure)
 
 if __name__ == "__main__":
     fpl.loop.run()

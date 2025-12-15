@@ -17,11 +17,29 @@ git clone https://github.com/hantman-lab/realSpike.git
 # navigate to the repo
 cd realSpike/ 
 
-# install the requirements
-pip install -r requirements.txt
-
 # install in editable mode
 pip install -e .
-```
+````
 
-[//]: # (note about installing improv)
+## Installing `improv` 
+
+**You must already have `redis` installed.**
+
+You cannot simply `pip install improv`. Do the following instead:
+
+```bash
+# clone
+git clone https://github.com/project-improv/improv.git
+
+cd improv/
+
+# add remote 
+git remote add rwschonberg https://github.com/rwschonberg/improv
+# fetch his branches
+git fetch rwschonberg
+# checkout a new branch off of the zmq branch
+git checkout -b redis-only rwschonberg/zmq
+
+### IMPORTANT: relax the numpy constraint in the pyproject.toml before in-place install
+pip install -e .
+```

@@ -1,9 +1,7 @@
 """Utility functions for doing MUA."""
-from typing import List
 import scipy.signal
 import numpy as np
 import tifffile
-import zmq
 
 
 # define filter functions
@@ -20,7 +18,7 @@ def butter_filter(data, cutoff, fs, order=5, axis=-1, btype='high'):
     return y
 
 
-def get_spike_events(data: np.ndarray, median, num_dev=4):
+def get_spike_events(data: np.ndarray, median, num_dev=5):
     # calculate mad
     mad = scipy.stats.median_abs_deviation(data, axis=1)
 
@@ -67,6 +65,17 @@ def get_global_median():
     median = np.median(butter_filter(data[:, :4000], 1_000, 30_000), axis=1)
 
     return median
+
+def bin_spikes(spikes: np.ndarray, bin_size: int):
+    """Bin spikes into bins of given size."""
+    n_channels, n_timepoints = spikes.shape
+    n_bins = n_timepoints // bin_size  # drop remainder
+ #   print(n_bins)
+    spikes = spikes[:, :n_bins * bin_size]  # truncate to fit bins
+
+    # Reshape and sum
+    binned = spikes.reshape(n_channels, n_bins, bin_size).sum(axis=2)
+    return binned
 
 
 

@@ -1,8 +1,0 @@
-fastplotlib[imgui, notebook]
-tifffile
-scipy
-pandas
-matplotlib
-tqdm
-psychopy
-nidaqmx
