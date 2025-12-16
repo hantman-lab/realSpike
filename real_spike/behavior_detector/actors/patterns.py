@@ -35,7 +35,7 @@ class PatternGenerator(ZmqActor):
         port = 5559
         self.socket.bind(f"tcp://{address}:{port}")
 
-        self.latency = LatencyLogger("pattern_behavior_detector")
+        self.latency = LatencyLogger("pattern_behavior_detector", max_size=50_000)
 
         self.improv_logger.info("Completed setup for Pattern Generator")
 

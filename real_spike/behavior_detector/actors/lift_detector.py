@@ -24,7 +24,7 @@ class LiftDetector(ZmqActor):
         # start the video from queue
         self.frame_num = None
         self.latency = LatencyLogger(name="lift_behavior_detector",
-                                     max_size=20_000,
+                                     max_size=50_000,
                                      )
         self.offset = 0
 
@@ -58,8 +58,12 @@ class LiftDetector(ZmqActor):
         if data_id is not None:
             t = time.perf_counter_ns()
             data = np.frombuffer(self.client.client.get(data_id), np.uint16)
-            self.frame_num = data[-1]
+            self.frame_num = int(data[-1])
             self.frame = data[:-1].reshape(*self.reshape_size)
+
+            # will never see a lift before the pellet actually comes forward
+            if self.frame_num <= 600:
+                return
 
             if self.frame_num == 849:
                 if not LIFT_DETECTED:
@@ -96,5 +100,5 @@ class LiftDetector(ZmqActor):
             self.client.client.expire(store_id, 15)
             self.q_out.put(store_id)
             t2 = time.perf_counter_ns()
-            self.latency.add(self.offset + self.frame_num, t2 - t)
+            self.latency.add(self.frame_num + self.offset, t2 - t)
 

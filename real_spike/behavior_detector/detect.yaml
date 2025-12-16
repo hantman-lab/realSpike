@@ -4,8 +4,8 @@ actors:
     class: Generator
 
   Detector:
-    package: actors.lift_detector
-    class: LiftDetector
+    package: actors.grab_detector
+    class: GrabDetector
 
   Pattern:
     package: actors.patterns

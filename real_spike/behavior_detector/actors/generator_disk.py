@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # toggle for which behavior to detect
-GRAB = False
+GRAB = True
 
 video_dir = Path("/home/clewis/repos/holo-nbs/data/videos/")
 
@@ -38,7 +38,7 @@ class Generator(ZmqActor):
             self.frame_num = 500
             _ = "lift"
         self.latency = LatencyLogger(name=f"generator_behavior_detector_{_}_disk",
-                                     max_size=20_000,
+                                     max_size=50_000,
                                     )
 
     def __str__(self):
