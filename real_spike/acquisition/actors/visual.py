@@ -29,7 +29,7 @@ class Visual(ZmqActor):
         self.latency = LatencyLogger("visual_acquisition")
 
         context = zmq.Context()
-        self.socket = context.socket(zmq.PUB)
+        self.socket = context.socket(zmq.PUSH)
         self.socket.bind("tcp://127.0.0.1:5557")
 
         # specify num channels to expect

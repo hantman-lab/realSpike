@@ -1,14 +1,11 @@
-from improv.actor import ZmqActor
 import logging
 import time
 import random
 import uuid
+import numpy as np
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from real_spike.utils import *
+from real_spike.utils import LatencyLogger, butter_filter, get_spike_events
+from improv.actor import ZmqActor
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -17,20 +14,21 @@ logger.setLevel(logging.INFO)
 class Processor(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if "name" in kwargs:
-            self.name = kwargs["name"]
+        self.name = "Processor"
 
     def setup(self):
-        if not hasattr(self, "name"):
-            self.name = "Processor"
-        self.frame = None
-        self.frame_num = 1
-        # initialize median with first 4 seconds of data (26 frames)
-        self.median = None
-        self.data = list()
-        self.data_ids = list()
+        self.data = None
+        self.frame_num = 0
 
-        self.latency = LatencyLogger("processor_stream")
+        # initialize median with the first 100 ms of data
+        self.median = None
+        self.median_data = list()
+
+        self.num_channels = 150
+        self.sample_rate = 30_000
+        self.window = int(1 * self.sample_rate / 1_000)
+
+        self.latency = LatencyLogger("processor_stream_disk")
         self.improv_logger.info("Completed setup for Processor")
 
     def stop(self):
@@ -43,34 +41,33 @@ class Processor(ZmqActor):
         data_id = None
         t = time.perf_counter_ns()
         try:
-            # really getting a data_id in here
+            # get data_id from queue
             data_id = self.q_in.get(timeout=0.05)
         except Exception as e:
                 pass
 
         if data_id is not None and self.frame_num is not None:
-            self.done = False
 
-            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(384, 150)
+            self.data = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(self.num_channels, self.window)
 
-            # accumulate 4 seconds of data
-            if self.frame_num < 27:
-                d = butter_filter(self.frame, 1000, 30_000)
-                self.data.append(d)
-                # self.data_ids.append(data_id)
+            # accumulate 100ms of data
+            if self.frame_num < 100:
+                d = butter_filter(self.data, 1_000, 30_000)
+                self.median_data.append(d)
                 self.frame_num += 1
                 return
             # use accumulated data to calculate median
-            elif self.frame_num == 27:
+            elif self.frame_num == 100:
+                self.median = np.median(np.concatenate(np.array(self.median_data), axis=1), axis=1)
                 self.improv_logger.info("Initialized median")
-                self.median = np.median(np.concatenate(np.array(self.data), axis=1), axis=1)
+                np.save("/home/clewis/repos/realSpike/real_spike/stream_data/median.npy", self.median)
 
             # high pass filter
-            data = butter_filter(self.frame, 1000, 30_000)
+            data = butter_filter(self.data, 1000, 30_000)
 
             # get spike counts and report
             spike_times, spike_counts = get_spike_events(data, self.median)
-            #
+            
             # if self.frame_num % 100 == 0:
             #     # sum spike events across channels
             # self.improv_logger.info(f"Processed frame {self.frame_num}, spike counts: {spike_counts}")

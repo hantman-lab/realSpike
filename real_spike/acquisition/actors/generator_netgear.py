@@ -17,6 +17,8 @@ logger.setLevel(logging.INFO)
 
 # streaming from disk flag
 DEBUG_MODE = True
+# using netgear switch
+NETGEAR = False
 
 class Generator(ZmqActor):
     def __init__(self, *args, **kwargs):
@@ -24,7 +26,7 @@ class Generator(ZmqActor):
         self.data = None
         self.name = "Generator"
         self.frame_num = 0
-        self.latency = LatencyLogger(name=f"generator_acquisition_disk_{DEBUG_MODE}")
+        self.latency = LatencyLogger(name=f"generator_acquisition_debug_{DEBUG_MODE}_netgear_{NETGEAR}")
 
         # specify num channels to take
         self.num_channels = 150

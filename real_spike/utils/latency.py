@@ -25,7 +25,7 @@ class LatencyLogger:
         if max_size is not None:
             self.max_size = max_size
         else:
-            self.max_size = 1000
+            self.max_size = 5_000
 
     def add(self, frame_number: int, latency: float):
         """Add a latency to the dataframe"""
@@ -33,6 +33,7 @@ class LatencyLogger:
         if frame_number > self.max_size:
             return
 
+        # save the recorded latency in ms
         self.df.loc[len(self.df.index)] = [int(frame_number), latency / 1e6]
 
 

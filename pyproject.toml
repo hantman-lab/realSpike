@@ -1,0 +1,41 @@
+# ===== Project info
+
+[project]
+dynamic = ["version"]
+name = "real_spike"
+description = "Real time ephys neural analysis and viz"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Caitlin Lewis" }]
+keywords = [
+    "ephys",
+    "flexible manipulation",
+    "motor control",
+    "science"
+]
+requires-python = ">= 3.10"
+dependencies = [
+    "fastplotlib[imgui, notebook]",
+    "scipy",
+    "tifffile",
+    "pandas",
+    "decord",
+    "matplotlib",
+    "h5py",
+    "pathlib",
+    "numpy",
+    "tqdm"
+]
+
+[project.optional-dependencies]
+tests = ["pytest"]
+
+[project.urls]
+Repository = "https://github.com/hantman-lab/realSpike"
+
+# ===== Building
+
+# Flit is great solution for simple pure-Python projects.
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
