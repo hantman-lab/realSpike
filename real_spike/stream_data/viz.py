@@ -1,47 +1,110 @@
 import fastplotlib as fpl
 import queue
-import pickle
-
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from real_spike.utils import *
+import numpy as np 
+import zmq 
+import scipy 
 
 "----------------------------------------------------------------------------------------------------------------------"
-# get the seeded median
-median = get_global_median()
+# define utility functions 
+def get_spike_events(data: np.ndarray, median: np.ndarray, num_dev: int = 5):
+    """
+    Use the MAD to calculate spike times num_dev above and below the provided median.
 
-# initialize a queue
-viz_queue = queue.Queue(maxsize=500)
+    Parameters
+    ----------
+    data: np.ndarray 
+        Array representing channels x time 
+    median: np.ndarray 
+        1D array representing the median value for each channel 
+    num_dev: int, default 5
+        Number of MAD deviations to threshold spikes above and below the median 
+    """
+    # validate data
+    if data.ndim != 2:
+        raise ValueError(f"Data passed in must be (channels, time). You have paased in an array of dim {data.ndim}.")
+    # validate median 
+    if data.shape[0] != median.shape[0]:
+        raise ValueError(f"Number of channels in data array must match number of median values provided. Data shape: {data.shape[0]} != Median shape: {median.shape[0]}")
 
-# connect to the viz actor via ZMQ
-sub = connect(port_number=5557)
+    # calculate mad
+    mad = scipy.stats.median_abs_deviation(data, axis=1)
 
-# initialize colors for each channel
-COLORS = list()
+    # Calculate threshold
+    thresh = (num_dev * mad) + median
 
-for i in range(384):
-    # randomly select a color
-    COLORS.append(np.append(np.random.rand(3), 1))
+    # Vectorized computation of absolute data
+    abs_data = np.abs(data)
+
+    # Find indices where threshold is crossed for each channel
+    spike_indices = [np.where(abs_data[i] > thresh[i])[0] for i in range(data.shape[0])]
+
+    spike_counts = [np.count_nonzero(arr) for arr in spike_indices]
+
+    return spike_indices, spike_counts
+
+
+def make_raster(ixs, COLORS):
+    """
+    Takes a list of threshold crossings and returns a list of points (channel number, spike time) and colors.
+    Used to make a raster plot.
+    """
+    spikes = list()
+
+    for i, ix in enumerate(ixs):
+        ys = np.full(ix.shape, i * 35)
+        sp = np.vstack([ix, ys]).T
+        spikes.append(sp)
+
+    colors = list()
+
+    for j, i in enumerate(spikes):
+        # randomly select a color
+        c = [COLORS[j]] * len(i)
+        colors += c
+
+    return spikes, np.array(colors)
+
+
 "----------------------------------------------------------------------------------------------------------------------"
-# setup figure
-rects = [
-    (0, 0, 0.5, 1),  # for image1
-    (0.5, 0, 0.5, 1),  # for image2
-]
+# data configurations: fetching 1ms of data at a time for 150 channels
+NUM_CHANNELS = 150
+NUM_SAMPLES = 30
 
-figure = fpl.Figure(rects=rects,
+# init colors 
+COLORS = np.random.rand(NUM_CHANNELS, 4) # [n_colors, rgba] array
+COLORS[:, -1] = 1 # set alpha = 1
+
+# queue for the viz 
+viz_queue = queue.Queue(5_000)
+
+"----------------------------------------------------------------------------------------------------------------------"
+# load in a saved median from disk 
+median = np.load("/home/clewis/repos/realSpike/real_spike/stream_data/median.npy")
+
+"----------------------------------------------------------------------------------------------------------------------"
+# make zmq connection 
+address = "localhost" 
+port = 5557
+
+context = zmq.Context()
+socket = context.socket(zmq.SUB)
+socket.setsockopt(zmq.SUBSCRIBE, b"")
+socket.connect(f"tcp://{address}:{port}")
+
+print(f"Made connection at {address} on port {port}")
+
+"----------------------------------------------------------------------------------------------------------------------"
+# make the figure
+figure = fpl.Figure(shape=(1, 2),
                     size=(1000, 900),
                     names=["filtered spikes", "raster"],
-                    controller_ids="sync")
+                )
 
 for subplot in figure:
     subplot.axes.visible = False
     subplot.camera.maintain_aspect = False
 
 "----------------------------------------------------------------------------------------------------------------------"
-SAVED = False
 
 def update():
     """Function to actual update the figure."""
@@ -50,9 +113,13 @@ def update():
 
     # first 5ms
     if len(figure["filtered spikes"].graphics) == 0:
-        # first data, fetch 5 chunks
+        # need to have 30 ms before stream continue
+        if viz_queue.qsize() != 30:
+            return 
+        print("init graphic") 
+        # first data, fetch 30 ms of data
         data = list()
-        for _ in range(5):
+        for _ in range(30):
             data.append(viz_queue.get())
         # concat chunks together and add to viz
         data = np.concatenate(data, axis=1)
@@ -71,7 +138,7 @@ def update():
         # fetch 1ms chunk and shift
         chunk = viz_queue.get()
 
-        # get the current data, most recent 4ms
+        # get the current data, most recent ms of data
         data = lg.data[30:, 1]
 
         # concatenate the new chunk to create a 5ms chunk again
@@ -97,30 +164,30 @@ def update():
 
     # clear the old raster plot
     figure["raster"].clear()
-
     # add new raster
-    figure["raster"].add_scatter(spikes, sizes=3, colors=colors)
+    figure["raster"].add_scatter(spikes, sizes=5, colors=colors)
 
 
 
 def update_figure(p):
     """Fetch the data from the socket, deserialize it, and put it in the queue for visualization."""
-    global viz_queue
+    global viz_queue, update
 
-    buff = get_buffer(sub)
+    # try to get from zmq buffer 
+    buff = None 
+    try: 
+        buff = socket.recv(zmq.NOBLOCK)
+    except zmq.Again:
+        buff = None 
+
     if buff is not None:
         # Deserialize the buffer into a NumPy array
         data = np.frombuffer(buff, dtype=np.float64)
 
-        data = data.reshape(384, 150)
-
-        # split the data into 1ms chunks instead of a single 5ms
-        # allows for circular buffer to shift the data stream
-        datas = np.split(data, 5, axis=1)
+        data = data.reshape(NUM_CHANNELS, NUM_SAMPLES)
 
         # put the data in the queue
-        for chunk in datas:
-            viz_queue.put(chunk)
+        viz_queue.put(data)
 
     # as long as there is something in the queue, update the viz
     if viz_queue.qsize() != 0:

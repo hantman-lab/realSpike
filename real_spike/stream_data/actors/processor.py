@@ -60,6 +60,7 @@ class Processor(ZmqActor):
             elif self.frame_num == 100:
                 self.median = np.median(np.concatenate(np.array(self.median_data), axis=1), axis=1)
                 self.improv_logger.info("Initialized median")
+                np.save("/home/clewis/repos/realSpike/real_spike/stream_data/median.npy", self.median)
 
             # high pass filter
             data = butter_filter(self.data, 1000, 30_000)
