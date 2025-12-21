@@ -60,6 +60,7 @@ class Generator(ZmqActor):
         return self.sample_data[50:self.num_channels+50, l_time:r_time].ravel()
 
     def run_step(self):
+        time.sleep(0.001)
         if self.frame_num > 3_999:
             return
         if self.frame_num % 1000 == 0:
