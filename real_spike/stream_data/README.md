@@ -26,7 +26,7 @@ setup
 2. Run the visualization python file `viz.py` 
 
 ```bash
-python ./real_spike/stream_data/viz.py
+python ./scripts/viz.py
 ```
 
 **Should see output "Made connection" in terminal.**
