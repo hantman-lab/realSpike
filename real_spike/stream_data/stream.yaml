@@ -1,23 +1,16 @@
 actors:
   Generator:
-    package: actors.generator
+    package: actors.generator_disk
     class: Generator
 
   Processor:
     package: actors.processor
     class: Processor
 
-  Model:
-    package: actors.model
-    class: Model
-
   Visual:
     package: actors.visual
     class: Visual
 
-  Pattern:
-    package: actors.patterns
-    class: PatternGenerator
 
 connections:
   Generator-Processor:
@@ -29,13 +22,7 @@ connections:
     sources:
       - Processor.q_out
     sinks:
-      - Model.q_in
       - Visual.q_in
-  Model-Pattern:
-    sources:
-      - Model.q_out
-    sinks:
-      - Pattern.q_in
 
 
 settings:

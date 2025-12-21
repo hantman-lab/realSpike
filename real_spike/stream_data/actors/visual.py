@@ -4,10 +4,6 @@ import zmq
 import time
 import numpy as np
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from real_spike.utils import LatencyLogger
 
 logger = logging.getLogger(__name__)
@@ -17,16 +13,13 @@ logger.setLevel(logging.INFO)
 class Visual(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if "name" in kwargs:
-            self.name = kwargs["name"]
+        self.name = "Visual"
 
     def setup(self):
-        if not hasattr(self, "name"):
-            self.name = "Visual"
-        self.frame_num = 27
-        self.frame = None
+        self.frame_num = 0
+        self.data = None
 
-        self.latency = LatencyLogger("visual")
+        self.latency = LatencyLogger("stream_visual")
 
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
@@ -49,14 +42,12 @@ class Visual(ZmqActor):
             pass
 
         if data_id is not None:
-            self.done = False
-            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(384, 150)
+            # no need to unpack the bytes
+            self.data = self.client.client.get(data_id)
 
-            self.socket.send(self.frame.ravel())
+            self.socket.send(self.data)
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)
             self.frame_num += 1
 
-            # delete data from store
-            #self.client.client.delete(data_id)
 
