@@ -2,11 +2,8 @@ from improv.actor import ZmqActor
 import logging
 import time
 import numpy as np
-import zmq
+#import zmq
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from real_spike.utils import LatencyLogger
 
@@ -18,82 +15,31 @@ PATTERN_PATH = "/home/clewis/repos/realSpike/real_spike/utils/patterns.npy"
 class PatternGenerator(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if "name" in kwargs:
-            self.name = kwargs["name"]
+        self.name = "Pattern Generator"
 
     def setup(self):
-        if not hasattr(self, "name"):
-            self.name = "Pattern Generator"
-        self.frame_num = 27
+        self.frame_num = 0
         # load the patterns during setup
         self.patterns = np.load(PATTERN_PATH)
 
         # set up zmq connection to psychopy file
-        context = zmq.Context()
-        self.socket = context.socket(zmq.PUSH)
-        address = "0.0.0.0"
-        port = 5559
+       # context = zmq.Context()
+       # self.socket = context.socket(zmq.PUB)
+       # address = "localhost"
+       # port = 5559
+       # self.socket.bind(f"tcp://{address}:{port}")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        self.socket.bind(f"tcp://{address}:{port}")
-
-        self.latency = LatencyLogger("pattern_acquistion")
+        self.latency = LatencyLogger("pattern_generator_acquistion")
 
         self.improv_logger.info("Completed setup for Pattern Generator")
 
     def stop(self):
         self.improv_logger.info("Pattern generation stopping")
         self.latency.save()
-        self.socket.close()
+      #  self.socket.close()
         return 0
 
     def run_step(self):
-        # want to randomly select a pattern to generate and show
         data_id = None
         t = time.perf_counter_ns()
         try:
@@ -102,23 +48,24 @@ class PatternGenerator(ZmqActor):
             pass
 
         if data_id is not None:
-            self.done = False
+            # get the pattern id sent by the model 
             pattern_id = int.from_bytes(self.client.client.get(data_id))
-            # get the pattern
+            # reconstruct the pattern
             current_pattern = self.patterns[pattern_id]
 
             if self.frame_num % 100 == 0:
-                # self.improv_logger.info(f"Pattern selected: {pattern_id}")
+                self.improv_logger.info(f"Pattern selected: {pattern_id}")
 
                 # send the pattern to psychopy, only sending 1 pattern every 100 frames
-                self.socket.send(current_pattern.ravel().tobytes())
+                #self.socket.send(current_pattern.ravel().tobytes())
 
-            # self.socket.send(current_pattern.ravel())
+          #  self.socket.send(current_pattern.ravel())
 
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)
             self.frame_num += 1
 
-            self.client.client.delete(data_id)
+            # can delete this item from the store because it will never be used again
+            #self.client.client.delete(data_id)
 
 
