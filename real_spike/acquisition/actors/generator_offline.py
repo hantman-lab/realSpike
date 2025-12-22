@@ -26,8 +26,6 @@ class Generator(ZmqActor):
         self.num_channels = 150
         self.channel_ids = [i for i in range(self.num_channels)]
 
-
-
     def __str__(self):
         return f"Name: {self.name}, Data: {self.data}"
 

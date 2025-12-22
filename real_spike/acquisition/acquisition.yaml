@@ -14,6 +14,10 @@ actors:
   Visual:
     package: actors.visual
     class: Visual
+  
+  Pattern:
+    package: actors.pattern 
+    class: Pattern
 
 
 connections:
@@ -28,6 +32,11 @@ connections:
     sinks:
       - Model.q_in
       - Visual.q_in
+  Model-Pattern:
+    sources:
+      - Model.q_out 
+    sinks:
+      - Pattern.q_in
 
 
 settings:

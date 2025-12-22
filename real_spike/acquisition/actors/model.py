@@ -17,6 +17,9 @@ class Model(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "Model"
+    
+    def __str__(self):
+        return f"Name: {self.name}"
 
     def setup(self):
         self.frame_num = 0
