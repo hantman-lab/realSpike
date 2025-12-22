@@ -1,13 +1,14 @@
-from psychopy import visual, core
+from psychopy import visual, core, event
 import threading
-import zmq.utils.monitor as m
 import nidaqmx
 import time
 import datetime
 import pandas as pd
+import os 
+import zmq
+import zmq.utils.monitor as m
+import numpy as np
 
-from real_spike.utils import *
-from real_spike.utils.latency import COLUMN_NAMES
 
 SOCKET_OPEN = True
 STIM_LENGTH_TIME = 0.005
@@ -15,142 +16,7 @@ STIM_LENGTH_TIME = 0.005
 TRIAL_NUMBER = 0
 
 # TODO: need to create a dataframe to save out pattern/trial information to columns = ["trial_number", "stim_time (datetime.now())", "pattern",
-# TODO: think about how to incorporate trial number, global number of patterns seen? increment every time you get
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# TODO: need to keep track of last stim and make sure next stim is not within 1s of the previous stim 
 # TODO: fail safe for laser, power limits
 
 COLUMN_NAMES = ["trial number", "stim time", "pattern"]
@@ -183,31 +49,37 @@ def monitor_socket(monitor):
 
 if __name__ == "__main__":
     # connect to port to listen on
-    address = "10.172.17.107"
-    port = 5559
+    address = "localhost"
+    port = 5558
+    
     context = zmq.Context()
-    sub = context.socket(zmq.PULL)
-    sub.connect(f"tcp://{address}:{port}")
+    socket = context.socket(zmq.SUB)
+    socket.setsockopt(zmq.SUBSCRIBE, b"")
+    socket.connect(f"tcp://{address}:{port}")
+    
     print(f"Connected socket to address {address} on port {port}")
 
     # Setup monitoring on the socket
-    monitor = sub.get_monitor_socket()
+    monitor = socket.get_monitor_socket()
     threading.Thread(target=monitor_socket, args=(monitor,), daemon=True).start()
 
     # open a blank screen
-    win = visual.Window(size=[1_000, 1_000],
+    win = visual.Window(size=[800, 800],
                         screen=0,
                         fullscr=False, # will need to flip this to True during actual experiments
-                        color='gray',
+                        color='black',
                         units='pix')
 
     # hide the cursor
     win.mouseVisible = False
 
-    win.flip()
-
     while SOCKET_OPEN:
-        buff = get_buffer(sub)
+        # try to get from zmq buffer 
+        buff = None 
+        try: 
+            buff = socket.recv(zmq.NOBLOCK)
+        except zmq.Again:
+            buff = None 
 
         if buff is not None:
             # Deserialize the buffer into a NumPy array
