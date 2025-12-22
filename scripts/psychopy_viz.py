@@ -15,9 +15,7 @@ STIM_LENGTH_TIME = 0.005
 # for now, just assuming that we are only stimming one pattern per trial
 TRIAL_NUMBER = 0
 
-# TODO: need to create a dataframe to save out pattern/trial information to columns = ["trial_number", "stim_time (datetime.now())", "pattern",
-# TODO: need to keep track of last stim and make sure next stim is not within 1s of the previous stim 
-# TODO: fail safe for laser, power limits
+LAST_STIM = time.time()
 
 COLUMN_NAMES = ["trial number", "stim time", "pattern"]
 df = pd.DataFrame(
@@ -41,7 +39,7 @@ def monitor_socket(monitor):
             elif evt == zmq.EVENT_DISCONNECTED:
                 SOCKET_OPEN = False
                 # save the df
-                df.to_pickle(f"./stim_data/experiment_{datetime.datetime.now()}.pkl")
+                df.to_pickle(f"./experiment_{datetime.datetime.now()}.pkl")
                 print("Exiting process")
         except zmq.error.ZMQError:
             break
@@ -50,7 +48,7 @@ def monitor_socket(monitor):
 if __name__ == "__main__":
     # connect to port to listen on
     address = "localhost"
-    port = 5558
+    port = 5559
     
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
@@ -68,12 +66,20 @@ if __name__ == "__main__":
                         screen=0,
                         fullscr=False, # will need to flip this to True during actual experiments
                         color='black',
-                        units='pix')
+                        units='pix',
+                        checkTiming=False)
 
     # hide the cursor
     win.mouseVisible = False
 
     while SOCKET_OPEN:
+        # laser safety check
+        t = time.time()
+        if LAST_STIM - t <= 1: 
+            print("Previous stim occurred less than 1 second ago.")
+            LAST_STIM = t
+            time.sleep(1)
+             
         # try to get from zmq buffer 
         buff = None 
         try: 
@@ -103,16 +109,16 @@ if __name__ == "__main__":
             win.flip()
 
             # TODO: send analog voltage via NIDAQ to trigger laser
-            with nidaqmx.Task() as task:
-                task.ao_channels.add_ao_voltage_chan("Dev1/ao1")
+            # with nidaqmx.Task() as task:
+            #     task.ao_channels.add_ao_voltage_chan("Dev1/ao1")
 
-                stim_time = datetime.datetime.now()
-                task.write(5.0)
+            #     stim_time = datetime.datetime.now()
+            #     task.write(5.0)
 
-                # hold pattern for stim length time
-                time.sleep(STIM_LENGTH_TIME)
+            #     # hold pattern for stim length time
+            #     time.sleep(STIM_LENGTH_TIME)
 
-                task.write(0.0)
+            #     task.write(0.0)
 
             # only hold the pattern for small period
             core.wait(0.25)
@@ -120,7 +126,7 @@ if __name__ == "__main__":
             win.flip()
 
             # save out all the things
-            df.loc[len(df.index)] = [TRIAL_NUMBER, stim_time, data]
+            # df.loc[len(df.index)] = [TRIAL_NUMBER, stim_time, data]
 
     win.close()
     core.quit()

@@ -51,11 +51,13 @@ class Pattern(ZmqActor):
             pass
 
         if data_id is not None:
-            self.p_id = np.frombuffer(self.client.client.get(data_id), np.float64)
+            self.p_id = int.from_bytes(self.client.client.get(data_id))
 
             # reconstruct pattern
             pattern = self.patterns[self.p_id]
-            self.socket.send(pattern.ravel())
+            # for now, only send a pattern every 100 frames
+            if self.frame_num % 100 == 0:
+                self.socket.send(pattern.ravel().tobytes())
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)
             self.frame_num += 1
