@@ -106,6 +106,12 @@ def fetch(hSglx, ip=0, js=2, num_samps=150, channel_ids=None):
         # turn into an array
         a = np.ctypeslib.as_array(data, shape=(nt * num_channels,))
         return a
+    
+
+def get_sample_rate(hSglx, js=2, ip=0):
+    """Returns the samples rate."""
+    srate = sglx.c_sglx_getStreamSampleRate(hSglx, js, ip)
+    return srate
 
 
 

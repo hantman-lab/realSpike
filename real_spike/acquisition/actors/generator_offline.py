@@ -5,7 +5,7 @@ import uuid
 import numpy as np
 import os
 
-from real_spike.utils import LatencyLogger, get_vmax, get_imax, get_gain, get_meta, fetch, get_sample_data
+from real_spike.utils import LatencyLogger, get_vmax, get_imax, get_gain, get_meta, fetch, get_sample_data, get_sample_rate
 from real_spike.utils.sglx_pkg import sglx as sglx
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,8 @@ class Generator(ZmqActor):
 
         # specify num channels to take
         self.num_channels = 150
-        self.channel_ids = [i for i in range(self.num_channels)]
+        # get channels 50 to 200
+        self.channel_ids = [i for i in range(50, 50+self.num_channels)]
 
     def __str__(self):
         return f"Name: {self.name}, Data: {self.data}"
@@ -47,6 +48,10 @@ class Generator(ZmqActor):
                 self.Vmax = get_vmax(self.hSglx)
                 self.Imax = get_imax(self.hSglx)
                 self.gain = get_gain(self.hSglx)
+                
+                self.sample_rate = get_sample_rate(self.hSglx)
+                self.window = int(1 * self.sample_rate / 1_000)
+                
             else:
                 self.improv_logger.info("error [{}]\n".format(sglx.c_sglx_getError(self.hSglx)))
                 raise Exception
