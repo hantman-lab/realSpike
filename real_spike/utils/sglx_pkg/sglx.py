@@ -3,14 +3,18 @@
 
 from sys import version_info
 from ctypes import *
+import os 
+
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+path = os.path.join(root, "sglx_pkg/libSglxApi.so")
 
 if version_info >= (3, 8):
     sglx = CDLL(
-        "/home/clewis/repos/realSpike/real_spike/utils/sglx_pkg/libSglxApi.so",
+        path,
         winmode=0,
     )
 else:
-    sglx = CDLL("/home/clewis/repos/realSpike/real_spike/utils/sglx_pkg/libSglxApi.so")
+    sglx = CDLL(path)
 
 
 # Usage ------------------
