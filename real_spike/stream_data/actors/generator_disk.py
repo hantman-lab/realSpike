@@ -1,5 +1,4 @@
 import os
-import tifffile
 import logging
 import time
 import uuid

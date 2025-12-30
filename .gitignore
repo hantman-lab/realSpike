@@ -20,3 +20,4 @@ realSpike.egg-info/
 
 *.npy
 
+experiment_*

@@ -1,8 +1,9 @@
 from improv.actor import ZmqActor
 import logging
-import zmq
 import time
 import numpy as np
+import zmq
+
 
 from real_spike.utils import LatencyLogger
 
@@ -10,27 +11,33 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Visual(ZmqActor):
+class Pattern(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.name = "Visual"
+        self.name = "Pattern"
+    
+    def __str__(self):
+        return f"Name: {self.name}"
 
     def setup(self):
         self.frame_num = 0
-        self.data = None
+        self.p_id = None
 
-        self.latency = LatencyLogger("stream_visual")
-
+        self.latency = LatencyLogger("pattern_generator_acquisition")
+        
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
         address = "localhost"
-        port = 5557
+        port = 5559
         self.socket.bind(f"tcp://{address}:{port}")
 
-        self.improv_logger.info("Completed setup for Visual")
+       
+        self.patterns = np.load("/home/clewis/repos/realSpike/real_spike/utils/patterns.npy")
+
+        self.improv_logger.info("Completed setup for Pattern Generator")
 
     def stop(self):
-        self.improv_logger.info(f"Visual stopping: {self.frame_num} frames seen")
+        self.improv_logger.info(f"Pattern Generator stopping")
         self.socket.close()
         self.latency.save()
         return 0
@@ -44,12 +51,13 @@ class Visual(ZmqActor):
             pass
 
         if data_id is not None:
-            # no need to unpack the bytes
-            self.data = self.client.client.get(data_id)
+            self.p_id = int.from_bytes(self.client.client.get(data_id))
 
-            self.socket.send(self.data)
+            # reconstruct pattern
+            pattern = self.patterns[self.p_id]
+            # for now, only send a pattern every 100 frames
+            if self.frame_num % 100 == 0:
+                self.socket.send(pattern.ravel().tobytes())
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)
             self.frame_num += 1
-
-

@@ -79,7 +79,7 @@ viz_queue = queue.Queue(5_000)
 
 "----------------------------------------------------------------------------------------------------------------------"
 # load in a saved median from disk 
-median = np.load("/home/clewis/repos/realSpike/real_spike/stream_data/median.npy")
+median = np.load("/home/clewis/repos/realSpike/data/median.npy")
 
 "----------------------------------------------------------------------------------------------------------------------"
 # make zmq connection 
