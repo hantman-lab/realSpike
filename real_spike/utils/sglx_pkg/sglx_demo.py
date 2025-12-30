@@ -1,3 +1,4 @@
+# ruff: noqa
 # -*- coding: utf-8 -*-
 
 import sglx as sglx
@@ -9,14 +10,14 @@ sglx_port = 4142
 
 
 def justConnect():
-    print( "\nCalling connect...\n\n" )
+    print("\nCalling connect...\n\n")
     hSglx = sglx.c_sglx_createHandle()
 
     # Using default loopback address and port
     if sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port):
-        print( "version <{}>\n".format(sglx.c_sglx_getVersion(hSglx)))
+        print("version <{}>\n".format(sglx.c_sglx_getVersion(hSglx)))
     else:
-        print( "error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
 
     sglx.c_sglx_close(hSglx)
     sglx.c_sglx_destroyHandle(hSglx)
@@ -25,18 +26,18 @@ def justConnect():
 # Simple query.
 #
 def console_test():
-    print( "\nConsole test...\n\n" )
+    print("\nConsole test...\n\n")
     hSglx = sglx.c_sglx_createHandle()
-    ok    = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
+    ok = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
 
     if ok:
         hid = c_bool()
-        ok  = sglx.c_sglx_isConsoleHidden(byref(hid), hSglx)
+        ok = sglx.c_sglx_isConsoleHidden(byref(hid), hSglx)
         if ok:
-            print( "Console hidden: {}\n".format( bool(hid) ) )
+            print("Console hidden: {}\n".format(bool(hid)))
 
     if not ok:
-        print( "error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
 
     sglx.c_sglx_close(hSglx)
     sglx.c_sglx_destroyHandle(hSglx)
@@ -45,16 +46,16 @@ def console_test():
 # SHA1.
 #
 def verify_test():
-    print( "\nVerify test...\n\n" )
+    print("\nVerify test...\n\n")
     hSglx = sglx.c_sglx_createHandle()
-    ok    = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
+    ok = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
 
     if ok:
         filename = "D:\\AAA\\TT_g0\\TT_g0_imec0\\TT_g0_t0.imec0.ap.bin"
         ok = sglx.c_sglx_verifySha1(sglx.sglx_demo_callback, hSglx, filename.encode())
 
     if not ok:
-        print( "error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
 
     sglx.c_sglx_close(hSglx)
     sglx.c_sglx_destroyHandle(hSglx)
@@ -63,16 +64,18 @@ def verify_test():
 # Par2.
 #
 def par2_test():
-    print( "\nPar2 test...\n\n" )
+    print("\nPar2 test...\n\n")
     hSglx = sglx.c_sglx_createHandle()
-    ok    = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
+    ok = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
 
     if ok:
         filename = "D:\\AAA\\TT_g0\\TT_g0_imec0\\TT_g0_t0.imec0.ap.bin"
-        ok = sglx.c_sglx_par2(sglx.sglx_demo_callback, hSglx, ord('v'), filename.encode())
+        ok = sglx.c_sglx_par2(
+            sglx.sglx_demo_callback, hSglx, ord("v"), filename.encode()
+        )
 
     if not ok:
-        print( "error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
 
     sglx.c_sglx_close(hSglx)
     sglx.c_sglx_destroyHandle(hSglx)
@@ -81,24 +84,24 @@ def par2_test():
 # Query.
 #
 def getParams_test():
-    print( "\nGet params...\n\n" )
+    print("\nGet params...\n\n")
     hSglx = sglx.c_sglx_createHandle()
-    ok    = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
+    ok = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
 
     if ok:
         nval = c_int()
-        len  = c_int()
-        ok   = sglx.c_sglx_getParams(byref(nval), hSglx)
+        len = c_int()
+        ok = sglx.c_sglx_getParams(byref(nval), hSglx)
         if ok:
             kv = {}
             for i in range(0, nval.value):
                 line = sglx.c_sglx_getstr(byref(len), hSglx, i).decode()
-                parts = line.split( '=' )
-                kv.update( {parts[0]: parts[1]} )
-            print( "{}".format( kv.items() ) )
+                parts = line.split("=")
+                kv.update({parts[0]: parts[1]})
+            print("{}".format(kv.items()))
 
     if not ok:
-        print( "error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
 
     sglx.c_sglx_close(hSglx)
     sglx.c_sglx_destroyHandle(hSglx)
@@ -107,20 +110,20 @@ def getParams_test():
 # Structure.
 #
 def getShankMap_test():
-    print( "\nGet shank map...\n\n" )
+    print("\nGet shank map...\n\n")
     hSglx = sglx.c_sglx_createHandle()
-    ok    = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
+    ok = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
 
     if ok:
         nval = c_int()
-        len  = c_int()
-        ok   = sglx.c_sglx_getNIShankMap(byref(nval), hSglx)
+        len = c_int()
+        ok = sglx.c_sglx_getNIShankMap(byref(nval), hSglx)
         if ok:
             for i in range(0, nval.value):
-                print( "{}".format(sglx.c_sglx_getstr(byref(len), hSglx, i)))
+                print("{}".format(sglx.c_sglx_getstr(byref(len), hSglx, i)))
 
     if not ok:
-        print( "error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
 
     sglx.c_sglx_close(hSglx)
     sglx.c_sglx_destroyHandle(hSglx)
@@ -129,7 +132,7 @@ def getShankMap_test():
 # Set the user notes for the next run; read that back.
 #
 def set_get_userNotes_test():
-    print( "\nSet, get notes...\n\n" )
+    print("\nSet, get notes...\n\n")
 
     hSglx = sglx.c_sglx_createHandle()
     ok = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
@@ -137,29 +140,35 @@ def set_get_userNotes_test():
     if ok:
         # Make sure we also set a new run name.
         run = c_char_p()
-        ok  = sglx.c_sglx_getRunName(byref(run), hSglx)
+        ok = sglx.c_sglx_getRunName(byref(run), hSglx)
 
         if ok:
             sglx.c_sglx_setkv(hSglx, "".encode(), "".encode())
-            sglx.c_sglx_setkv(hSglx, "snsNotes".encode(), "Test setting of run comment field.".encode())
-            sglx.c_sglx_setkv(hSglx, "snsRunName".encode(), (run.value.decode() + "_v2").encode())
+            sglx.c_sglx_setkv(
+                hSglx,
+                "snsNotes".encode(),
+                "Test setting of run comment field.".encode(),
+            )
+            sglx.c_sglx_setkv(
+                hSglx, "snsRunName".encode(), (run.value.decode() + "_v2").encode()
+            )
 
             ok = sglx.c_sglx_setKVParams(hSglx)
 
             if ok:
                 nval = c_int()
-                len  = c_int()
-                ok   = sglx.c_sglx_getParams(byref(nval), hSglx)
+                len = c_int()
+                ok = sglx.c_sglx_getParams(byref(nval), hSglx)
 
                 if ok:
                     for i in range(0, nval.value):
                         s = sglx.c_sglx_getstr(byref(len), hSglx, i).decode()
-                        if s.startswith( "snsNotes" ):
-                            print( "{}\n".format( s ) )
+                        if s.startswith("snsNotes"):
+                            print("{}\n".format(s))
                             break
 
     if not ok:
-        print( "error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
 
     sglx.c_sglx_close(hSglx)
     sglx.c_sglx_destroyHandle(hSglx)
@@ -169,39 +178,41 @@ def set_get_userNotes_test():
 # Run SpikeGLX_NISIM.exe which generates a 1 Hz sine wave on AI0.
 #
 def plot_NI_1sec_test():
-    print( "\nPlot NI AI0...\n\n" )
+    print("\nPlot NI AI0...\n\n")
 
     hSglx = sglx.c_sglx_createHandle()
-    ok    = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
+    ok = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
 
     if ok:
         # NI stream is (js,ip) = (0,0)
         srate = sglx.c_sglx_getStreamSampleRate(hSglx, 0, 0)
-        print( "Sample rate {}\n".format( srate ) )
+        print("Sample rate {}\n".format(srate))
 
         if srate > 0:
-            data     = POINTER(c_short)()
-            ndata    = c_int()
+            data = POINTER(c_short)()
+            ndata = c_int()
             py_chans = [0]
-            nC       = len(py_chans)
+            nC = len(py_chans)
             channels = (c_int * nC)(*py_chans)
 
-            headCt = sglx.c_sglx_fetchLatest(byref(data), byref(ndata), hSglx, 0, 0, int(srate), channels, nC, 1)
+            headCt = sglx.c_sglx_fetchLatest(
+                byref(data), byref(ndata), hSglx, 0, 0, int(srate), channels, nC, 1
+            )
 
             if headCt > 0:
                 nt = int(ndata.value / nC)
-                print( "Head count {}, samples {}\n".format( headCt, nt ) )
+                print("Head count {}, samples {}\n".format(headCt, nt))
 
                 for it in range(0, nt, 250):
-                    spc = int(40 + (80 * data[it*nC]) / 32768)
-                    s   = ""
+                    spc = int(40 + (80 * data[it * nC]) / 32768)
+                    s = ""
                     for i in range(0, spc):
-                        s += ' '
-                    s += '*'
-                    print( f"{s}" )
+                        s += " "
+                    s += "*"
+                    print(f"{s}")
 
     if not ok:
-        print( "error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
 
     sglx.c_sglx_close(hSglx)
     sglx.c_sglx_destroyHandle(hSglx)
@@ -225,28 +236,28 @@ def plot_NI_1sec_test():
 # closed-loop latency to be 5.5 ms using the Cpp API.
 #
 def latency_test():
-    print( "\nLatency test...\n\n" )
+    print("\nLatency test...\n\n")
 
     hSglx = sglx.c_sglx_createHandle()
-    ok    = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
+    ok = sglx.c_sglx_connect(hSglx, sglx_addr.encode(), sglx_port)
 
     if ok:
         js = 2
         ip = 0
 
-        data     = POINTER(c_short)()
-        ndata    = c_int()
+        data = POINTER(c_short)()
+        ndata = c_int()
         py_chans = [i for i in range(384, 769)]
-        nC       = len(py_chans)
+        nC = len(py_chans)
         channels = (c_int * nC)(*py_chans)
 
-        mv2i16 = 1.0/(1200.0/250/1024)
-        thresh = 0.45*mv2i16
-        id     = 393 - 384
-        bits   = 0
-        line   = "Dev4/port0/line5"
+        mv2i16 = 1.0 / (1200.0 / 250 / 1024)
+        thresh = 0.45 * mv2i16
+        id = 393 - 384
+        bits = 0
+        line = "Dev4/port0/line5"
 
-        print( "Threshold {}\n".format( thresh ) )
+        print("Threshold {}\n".format(thresh))
 
         fromCt = sglx.c_sglx_getStreamSampleCount(hSglx, js, ip)
 
@@ -255,7 +266,18 @@ def latency_test():
 
             if ok:
                 while True:
-                    headCt = sglx.c_sglx_fetch(byref(data), byref(ndata), hSglx, js, ip, fromCt, 120, channels, nC, 1)
+                    headCt = sglx.c_sglx_fetch(
+                        byref(data),
+                        byref(ndata),
+                        hSglx,
+                        js,
+                        ip,
+                        fromCt,
+                        120,
+                        channels,
+                        nC,
+                        1,
+                    )
 
                     if headCt == 0:
                         break
@@ -263,14 +285,14 @@ def latency_test():
                     tpts = int(ndata.value / nC)
 
                     if tpts > 1:
-                        diff  = data[id + (tpts-1)*nC] - data[id]
+                        diff = data[id + (tpts - 1) * nC] - data[id]
                         digOK = True
 
                         if diff > thresh and bits == 0:
-                            bits  = 0xFF
+                            bits = 0xFF
                             digOK = sglx.c_sglx_ni_DO_set(hSglx, line.encode(), bits)
                         elif diff < -thresh and bits == 0xFF:
-                            bits  = 0
+                            bits = 0
                             digOK = sglx.c_sglx_ni_DO_set(hSglx, line.encode(), bits)
 
                         if not digOK:
@@ -279,7 +301,7 @@ def latency_test():
                         fromCt = headCt + tpts
 
     if not ok:
-        print( "error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
 
     sglx.c_sglx_close(hSglx)
     sglx.c_sglx_destroyHandle(hSglx)
@@ -287,5 +309,3 @@ def latency_test():
 
 if __name__ == "__main__":
     justConnect()
-
-

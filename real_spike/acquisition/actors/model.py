@@ -17,7 +17,7 @@ class Model(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "Model"
-    
+
     def __str__(self):
         return f"Name: {self.name}"
 
@@ -35,7 +35,7 @@ class Model(ZmqActor):
         self.improv_logger.info("Completed setup for Model")
 
     def stop(self):
-        self.improv_logger.info(f"Model stopping")
+        self.improv_logger.info("Model stopping")
         self.latency.save()
         return 0
 
@@ -44,11 +44,13 @@ class Model(ZmqActor):
         t = time.perf_counter_ns()
         try:
             data_id = self.q_in.get(timeout=0.05)
-        except Exception as e:
+        except Exception:
             pass
 
         if data_id is not None:
-            self.data = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(self.num_channels, self.num_samples)
+            self.data = np.frombuffer(
+                self.client.client.get(data_id), np.float64
+            ).reshape(self.num_channels, self.num_samples)
 
             # generate a random pattern to stimulate (29 options)
             pattern_id = random.randint(0, 28)
@@ -59,4 +61,3 @@ class Model(ZmqActor):
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)
             self.frame_num += 1
-

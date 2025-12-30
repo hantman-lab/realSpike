@@ -1,30 +1,36 @@
 import fastplotlib as fpl
 import queue
-import numpy as np 
-import zmq 
-import scipy 
+import numpy as np
+import zmq
+import scipy
 
 "----------------------------------------------------------------------------------------------------------------------"
-# define utility functions 
+
+
+# define utility functions
 def get_spike_events(data: np.ndarray, median: np.ndarray, num_dev: int = 5):
     """
     Use the MAD to calculate spike times num_dev above and below the provided median.
 
     Parameters
     ----------
-    data: np.ndarray 
-        Array representing channels x time 
-    median: np.ndarray 
-        1D array representing the median value for each channel 
+    data: np.ndarray
+        Array representing channels x time
+    median: np.ndarray
+        1D array representing the median value for each channel
     num_dev: int, default 5
-        Number of MAD deviations to threshold spikes above and below the median 
+        Number of MAD deviations to threshold spikes above and below the median
     """
     # validate data
     if data.ndim != 2:
-        raise ValueError(f"Data passed in must be (channels, time). You have paased in an array of dim {data.ndim}.")
-    # validate median 
+        raise ValueError(
+            f"Data passed in must be (channels, time). You have paased in an array of dim {data.ndim}."
+        )
+    # validate median
     if data.shape[0] != median.shape[0]:
-        raise ValueError(f"Number of channels in data array must match number of median values provided. Data shape: {data.shape[0]} != Median shape: {median.shape[0]}")
+        raise ValueError(
+            f"Number of channels in data array must match number of median values provided. Data shape: {data.shape[0]} != Median shape: {median.shape[0]}"
+        )
 
     # calculate mad
     mad = scipy.stats.median_abs_deviation(data, axis=1)
@@ -70,20 +76,20 @@ def make_raster(ixs, COLORS):
 NUM_CHANNELS = 150
 NUM_SAMPLES = 30
 
-# init colors 
-COLORS = np.random.rand(NUM_CHANNELS, 4) # [n_colors, rgba] array
-COLORS[:, -1] = 1 # set alpha = 1
+# init colors
+COLORS = np.random.rand(NUM_CHANNELS, 4)  # [n_colors, rgba] array
+COLORS[:, -1] = 1  # set alpha = 1
 
-# queue for the viz 
+# queue for the viz
 viz_queue = queue.Queue(5_000)
 
 "----------------------------------------------------------------------------------------------------------------------"
-# load in a saved median from disk 
+# load in a saved median from disk
 median = np.load("/home/clewis/repos/realSpike/data/median.npy")
 
 "----------------------------------------------------------------------------------------------------------------------"
-# make zmq connection 
-address = "localhost" 
+# make zmq connection
+address = "localhost"
 port = 5557
 
 context = zmq.Context()
@@ -95,16 +101,18 @@ print(f"Made connection at {address} on port {port}")
 
 "----------------------------------------------------------------------------------------------------------------------"
 # make the figure
-figure = fpl.Figure(shape=(1, 2),
-                    size=(1000, 900),
-                    names=["filtered spikes", "raster"],
-                )
+figure = fpl.Figure(
+    shape=(1, 2),
+    size=(1000, 900),
+    names=["filtered spikes", "raster"],
+)
 
 for subplot in figure:
     subplot.axes.visible = False
     subplot.camera.maintain_aspect = False
 
 "----------------------------------------------------------------------------------------------------------------------"
+
 
 def update():
     """Function to actual update the figure."""
@@ -115,19 +123,17 @@ def update():
     if len(figure["filtered spikes"].graphics) == 0:
         # need to have 30 ms before stream continue
         if viz_queue.qsize() != 30:
-            return 
-        print("init graphic") 
+            return
+        print("init graphic")
         # first data, fetch 30 ms of data
         data = list()
         for _ in range(30):
             data.append(viz_queue.get())
         # concat chunks together and add to viz
         data = np.concatenate(data, axis=1)
-        lg = figure["filtered spikes"].add_line_stack(data,
-                                                      colors="gray",
-                                                      thickness=0.5,
-                                                      separation=35,
-                                                      name="lg")
+        lg = figure["filtered spikes"].add_line_stack(
+            data, colors="gray", thickness=0.5, separation=35, name="lg"
+        )
     # shift left 1ms and add new chunk
     else:
         # get the current graphic
@@ -151,7 +157,6 @@ def update():
     # get the spike times
     ixs, _ = get_spike_events(data, median)
 
-
     # color each spike event orange
     for i in range(len(ixs)):
         if ixs[i].shape[0] == 0:
@@ -168,17 +173,16 @@ def update():
     figure["raster"].add_scatter(spikes, sizes=5, colors=colors)
 
 
-
 def update_figure(p):
     """Fetch the data from the socket, deserialize it, and put it in the queue for visualization."""
     global viz_queue, update
 
-    # try to get from zmq buffer 
-    buff = None 
-    try: 
+    # try to get from zmq buffer
+    buff = None
+    try:
         buff = socket.recv(zmq.NOBLOCK)
     except zmq.Again:
-        buff = None 
+        buff = None
 
     if buff is not None:
         # Deserialize the buffer into a NumPy array
@@ -192,6 +196,7 @@ def update_figure(p):
     # as long as there is something in the queue, update the viz
     if viz_queue.qsize() != 0:
         update()
+
 
 figure.show()
 

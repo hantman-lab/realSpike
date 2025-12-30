@@ -1,5 +1,5 @@
 """
-Borrowing this from pygfx: https://github.com/pygfx/pygfx. Thank you @almarklein 
+Borrowing this from pygfx: https://github.com/pygfx/pygfx. Thank you @almarklein
 _version.py v1.4
 
 Simple version string management, using a hard-coded version string
