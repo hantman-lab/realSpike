@@ -3,7 +3,7 @@
 
 from sys import version_info
 from ctypes import *
-import os 
+import os
 
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 path = os.path.join(root, "sglx_pkg/libSglxApi.so")
