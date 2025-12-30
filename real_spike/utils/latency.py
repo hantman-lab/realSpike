@@ -1,12 +1,10 @@
 import pandas as pd
-import time
 
 COLUMN_NAMES = ["frame number", "latency"]
 
+
 class LatencyLogger:
-    def __init__(self,
-                 name: str,
-                 max_size: int | None = None):
+    def __init__(self, name: str, max_size: int | None = None):
         """
         Parameters
         ----------
@@ -17,10 +15,7 @@ class LatencyLogger:
         """
         self.name = name
 
-        self.df = pd.DataFrame(
-            data=None,
-            columns=COLUMN_NAMES
-        )
+        self.df = pd.DataFrame(data=None, columns=COLUMN_NAMES)
 
         if max_size is not None:
             self.max_size = max_size
@@ -36,8 +31,6 @@ class LatencyLogger:
         # save the recorded latency in ms
         self.df.loc[len(self.df.index)] = [int(frame_number), latency / 1e6]
 
-
     def save(self):
         """Save the dataframe to disk."""
         self.df.to_pickle(f"./latency/{self.name}_latency.pkl")
-

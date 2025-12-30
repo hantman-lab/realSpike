@@ -5,7 +5,16 @@ import uuid
 import numpy as np
 import os
 
-from real_spike.utils import LatencyLogger, get_vmax, get_imax, get_gain, get_meta, fetch, get_sample_data, get_sample_rate
+from real_spike.utils import (
+    LatencyLogger,
+    get_vmax,
+    get_imax,
+    get_gain,
+    get_meta,
+    fetch,
+    get_sample_data,
+    get_sample_rate,
+)
 from real_spike.utils.sglx_pkg import sglx as sglx
 
 logger = logging.getLogger(__name__)
@@ -13,6 +22,7 @@ logger.setLevel(logging.INFO)
 
 # streaming from disk flag
 DEBUG_MODE = True
+
 
 class Generator(ZmqActor):
     def __init__(self, *args, **kwargs):
@@ -25,7 +35,7 @@ class Generator(ZmqActor):
         # specify num channels to take
         self.num_channels = 150
         # get channels 50 to 200
-        self.channel_ids = [i for i in range(50, 50+self.num_channels)]
+        self.channel_ids = [i for i in range(50, 50 + self.num_channels)]
 
     def __str__(self):
         return f"Name: {self.name}, Data: {self.data}"
@@ -42,25 +52,34 @@ class Generator(ZmqActor):
         if not DEBUG_MODE:
             if sglx.c_sglx_connect(self.hSglx, ip_address.encode(), port):
                 self.improv_logger.info("Successfully connected to SpikeGLX")
-                self.improv_logger.info("version <{}>\n".format(sglx.c_sglx_getVersion(self.hSglx)))
+                self.improv_logger.info(
+                    "version <{}>\n".format(sglx.c_sglx_getVersion(self.hSglx))
+                )
 
                 # get vmax, imax, and gain
                 self.Vmax = get_vmax(self.hSglx)
                 self.Imax = get_imax(self.hSglx)
                 self.gain = get_gain(self.hSglx)
-                
+
                 self.sample_rate = get_sample_rate(self.hSglx)
                 self.window = int(1 * self.sample_rate / 1_000)
-                
+
             else:
-                self.improv_logger.info("error [{}]\n".format(sglx.c_sglx_getError(self.hSglx)))
+                self.improv_logger.info(
+                    "error [{}]\n".format(sglx.c_sglx_getError(self.hSglx))
+                )
                 raise Exception
         else:
-            self.meta_data = get_meta("/home/clewis/repos/realSpike/data/120s_test/rb50_20250126_g0_t0.imec0.ap.meta")
-            self.sample_data = get_sample_data("/home/clewis/repos/realSpike/data/120s_test/rb50_20250126_g0_t0.imec0.ap.bin", self.meta_data)
+            self.meta_data = get_meta(
+                "/home/clewis/repos/realSpike/data/120s_test/rb50_20250126_g0_t0.imec0.ap.meta"
+            )
+            self.sample_data = get_sample_data(
+                "/home/clewis/repos/realSpike/data/120s_test/rb50_20250126_g0_t0.imec0.ap.bin",
+                self.meta_data,
+            )
 
             # specify sampling rate
-            self.sample_rate = float(self.meta_data['imSampRate'])
+            self.sample_rate = float(self.meta_data["imSampRate"])
             # 1ms = 1 sec of data (30_000 time points) / 1_000 * 1
             self.window = int(1 * self.sample_rate / 1_000)
 
@@ -69,7 +88,9 @@ class Generator(ZmqActor):
             # get Imax
             self.Imax = float(self.meta_data["imMaxInt"])
             # get gain
-            self.gain = float(self.meta_data['imroTbl'].split(sep=')')[1].split(sep=' ')[3])
+            self.gain = float(
+                self.meta_data["imroTbl"].split(sep=")")[1].split(sep=" ")[3]
+            )
 
         self.improv_logger.info("Completed setup for Generator")
 
@@ -89,7 +110,7 @@ class Generator(ZmqActor):
         r_time = int((self.frame_num * self.window) + self.window)
         if r_time > self.sample_data.shape[1]:
             return np.full((self.num_channels, self.window), np.nan)
-        return self.sample_data[:self.num_channels, l_time:r_time].ravel()
+        return self.sample_data[: self.num_channels, l_time:r_time].ravel()
 
     def run_step(self):
         if self.frame_num > 3_999:

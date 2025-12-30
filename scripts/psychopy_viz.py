@@ -4,7 +4,7 @@ import nidaqmx
 import time
 import datetime
 import pandas as pd
-import os 
+import os
 import zmq
 import zmq.utils.monitor as m
 import numpy as np
@@ -18,10 +18,8 @@ TRIAL_NUMBER = 0
 LAST_STIM = time.time()
 
 COLUMN_NAMES = ["trial number", "stim time", "pattern"]
-df = pd.DataFrame(
-            data=None,
-            columns=COLUMN_NAMES
-        )
+df = pd.DataFrame(data=None, columns=COLUMN_NAMES)
+
 
 # mostly for stopping the process when "stop" is called in the TUI
 def monitor_socket(monitor):
@@ -33,7 +31,7 @@ def monitor_socket(monitor):
     while True:
         try:
             event = m.recv_monitor_message(monitor)
-            evt = event['event']
+            evt = event["event"]
             if evt == zmq.EVENT_ACCEPTED:
                 SOCKET_OPEN = True
             elif evt == zmq.EVENT_DISCONNECTED:
@@ -49,12 +47,12 @@ if __name__ == "__main__":
     # connect to port to listen on
     address = "localhost"
     port = 5559
-    
+
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
     socket.setsockopt(zmq.SUBSCRIBE, b"")
     socket.connect(f"tcp://{address}:{port}")
-    
+
     print(f"Connected socket to address {address} on port {port}")
 
     # Setup monitoring on the socket
@@ -62,12 +60,14 @@ if __name__ == "__main__":
     threading.Thread(target=monitor_socket, args=(monitor,), daemon=True).start()
 
     # open a blank screen
-    win = visual.Window(size=[800, 800],
-                        screen=0,
-                        fullscr=False, # will need to flip this to True during actual experiments
-                        color='black',
-                        units='pix',
-                        checkTiming=False)
+    win = visual.Window(
+        size=[800, 800],
+        screen=0,
+        fullscr=False,  # will need to flip this to True during actual experiments
+        color="black",
+        units="pix",
+        checkTiming=False,
+    )
 
     # hide the cursor
     win.mouseVisible = False
@@ -75,17 +75,17 @@ if __name__ == "__main__":
     while SOCKET_OPEN:
         # laser safety check
         t = time.time()
-        if LAST_STIM - t <= 1: 
+        if LAST_STIM - t <= 1:
             print("Previous stim occurred less than 1 second ago.")
             LAST_STIM = t
             time.sleep(1)
-             
-        # try to get from zmq buffer 
-        buff = None 
-        try: 
+
+        # try to get from zmq buffer
+        buff = None
+        try:
             buff = socket.recv(zmq.NOBLOCK)
         except zmq.Again:
-            buff = None 
+            buff = None
 
         if buff is not None:
             # Deserialize the buffer into a NumPy array

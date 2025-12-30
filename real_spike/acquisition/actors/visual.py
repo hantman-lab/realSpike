@@ -2,7 +2,6 @@ from improv.actor import ZmqActor
 import logging
 import zmq
 import time
-import numpy as np
 
 from real_spike.utils import LatencyLogger
 
@@ -40,7 +39,7 @@ class Visual(ZmqActor):
         t = time.perf_counter_ns()
         try:
             data_id = self.q_in.get(timeout=0.05)
-        except Exception as e:
+        except Exception:
             pass
 
         if data_id is not None:
@@ -51,5 +50,3 @@ class Visual(ZmqActor):
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)
             self.frame_num += 1
-
-

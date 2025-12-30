@@ -1,3 +1,4 @@
+# ruff: noqa
 """
 This software license is the 3-clause BSD license plus a fourth clause that
 prohibits redistribution for commercial purposes without further permission.

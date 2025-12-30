@@ -6,7 +6,6 @@ from typing import Dict
 from .sglx_pkg import sglx
 
 
-
 def get_vmax(hSglx, ip=0, js=2):
     """
     Get the imec probe range max. Same as meta_data['imAiRangeMax'].
@@ -29,7 +28,6 @@ def get_vmax(hSglx, ip=0, js=2):
         return 1
 
 
-
 def get_imax(hSglx, ip=0, js=2):
     """
     Get the imec probe max int. Same as meta_data['imMaxInt'].
@@ -43,13 +41,12 @@ def get_imax(hSglx, ip=0, js=2):
         The type of stream (imec=2)
     """
     max_int = c_int()
-    ok = sglx.c_sglx_getStreamMaxInt( byref(max_int), hSglx, js, ip )
+    ok = sglx.c_sglx_getStreamMaxInt(byref(max_int), hSglx, js, ip)
     if ok:
         return max_int.value
     else:
         print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
         return 1
-
 
 
 def get_gain(hSglx, ip=0, chan=0):
@@ -74,7 +71,6 @@ def get_gain(hSglx, ip=0, chan=0):
         return 1
 
 
-
 def fetch(hSglx, ip=0, js=2, num_samps=150, channel_ids=None):
     """Fetch data.
 
@@ -97,7 +93,9 @@ def fetch(hSglx, ip=0, js=2, num_samps=150, channel_ids=None):
     num_channels = len(channel_ids)
     channels = (c_int * num_channels)(*channel_ids)
 
-    headCt = sglx.c_sglx_fetchLatest(byref(data), byref(n_data), hSglx, js, ip, num_samps, channels, num_channels, 1)
+    headCt = sglx.c_sglx_fetchLatest(
+        byref(data), byref(n_data), hSglx, js, ip, num_samps, channels, num_channels, 1
+    )
 
     if headCt > 0:
         # should equal the number of samples
@@ -106,13 +104,12 @@ def fetch(hSglx, ip=0, js=2, num_samps=150, channel_ids=None):
         # turn into an array
         a = np.ctypeslib.as_array(data, shape=(nt * num_channels,))
         return a
-    
+
 
 def get_sample_rate(hSglx, js=2, ip=0):
     """Returns the samples rate."""
     srate = sglx.c_sglx_getStreamSampleRate(hSglx, js, ip)
     return srate
-
 
 
 def get_meta(file_path: str) -> Dict[str, str]:
@@ -137,9 +134,9 @@ def get_meta(file_path: str) -> Dict[str, str]:
         with file_path.open() as f:
             mdata = f.read().splitlines()
             for m in mdata:
-                item = m.split(sep='=')
-                if item[0][0] == '~':
-                    key = item[0][1:len(item[0])]
+                item = m.split(sep="=")
+                if item[0][0] == "~":
+                    key = item[0][1 : len(item[0])]
                 else:
                     key = item[0]
                 metadata.update({key: item[1]})
@@ -147,7 +144,6 @@ def get_meta(file_path: str) -> Dict[str, str]:
         raise FileNotFoundError(file_path)
 
     return metadata
-
 
 
 def get_sample_data(file_path: str, meta_data: Dict[str, str]):
@@ -163,10 +159,16 @@ def get_sample_data(file_path: str, meta_data: Dict[str, str]):
     meta_data : Dict[str, str]
         Dictionary containing metadata needed to load the data in the correct format
     """
-    nChan = int(meta_data['nSavedChans'])
-    nFileSamp = int(int(meta_data['fileSizeBytes'])/(2*nChan))
+    nChan = int(meta_data["nSavedChans"])
+    nFileSamp = int(int(meta_data["fileSizeBytes"]) / (2 * nChan))
 
-    data = np.memmap(file_path, dtype='int16', mode='r',
-                        shape=(nChan, nFileSamp), offset=0, order='F')
+    data = np.memmap(
+        file_path,
+        dtype="int16",
+        mode="r",
+        shape=(nChan, nFileSamp),
+        offset=0,
+        order="F",
+    )
 
     return data

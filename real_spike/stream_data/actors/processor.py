@@ -1,7 +1,5 @@
 import logging
 import time
-import random
-import uuid
 import numpy as np
 
 from real_spike.utils import LatencyLogger, butter_filter, get_spike_events
@@ -43,12 +41,13 @@ class Processor(ZmqActor):
         try:
             # get data_id from queue
             data_id = self.q_in.get(timeout=0.05)
-        except Exception as e:
-                pass
+        except Exception:
+            pass
 
         if data_id is not None and self.frame_num is not None:
-
-            self.data = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(self.num_channels, self.window)
+            self.data = np.frombuffer(
+                self.client.client.get(data_id), np.float64
+            ).reshape(self.num_channels, self.window)
 
             # accumulate 100ms of data
             if self.frame_num < 100:
@@ -58,7 +57,9 @@ class Processor(ZmqActor):
                 return
             # use accumulated data to calculate median
             elif self.frame_num == 100:
-                self.median = np.median(np.concatenate(np.array(self.median_data), axis=1), axis=1)
+                self.median = np.median(
+                    np.concatenate(np.array(self.median_data), axis=1), axis=1
+                )
                 self.improv_logger.info("Initialized median")
                 np.save("/home/clewis/repos/realSpike/data/median.npy", self.median)
 
@@ -66,8 +67,8 @@ class Processor(ZmqActor):
             data = butter_filter(self.data, 1000, 30_000)
 
             # get spike counts and report
-            spike_times, spike_counts = get_spike_events(data, self.median)
-            
+            _spike_times, _spike_counts = get_spike_events(data, self.median)
+
             # if self.frame_num % 100 == 0:
             #     # sum spike events across channels
             # self.improv_logger.info(f"Processed frame {self.frame_num}, spike counts: {spike_counts}")

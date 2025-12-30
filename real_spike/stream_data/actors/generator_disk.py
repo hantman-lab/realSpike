@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-
 class Generator(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -22,17 +21,21 @@ class Generator(ZmqActor):
 
         self.num_channels = 150
 
-
     def __str__(self):
         return f"Name: {self.name}, Data: {self.data}"
 
     def setup(self):
         # load the data
-        self.meta_data = get_meta("/home/clewis/repos/realSpike/data/120s_test/rb50_20250126_g0_t0.imec0.ap.meta")
-        self.sample_data = get_sample_data("/home/clewis/repos/realSpike/data/120s_test/rb50_20250126_g0_t0.imec0.ap.bin", self.meta_data)
+        self.meta_data = get_meta(
+            "/home/clewis/repos/realSpike/data/120s_test/rb50_20250126_g0_t0.imec0.ap.meta"
+        )
+        self.sample_data = get_sample_data(
+            "/home/clewis/repos/realSpike/data/120s_test/rb50_20250126_g0_t0.imec0.ap.bin",
+            self.meta_data,
+        )
 
         # specify step size, send 1 ms of data at a time
-        self.sample_rate = float(self.meta_data['imSampRate'])
+        self.sample_rate = float(self.meta_data["imSampRate"])
         # 5ms = 1 sec of data (30_000 time points) / 1_000 * 5
         self.window = int(1 * self.sample_rate / 1_000)
 
@@ -41,7 +44,7 @@ class Generator(ZmqActor):
         # get Imax
         self.Imax = float(self.meta_data["imMaxInt"])
         # get gain
-        self.gain = float(self.meta_data['imroTbl'].split(sep=')')[1].split(sep=' ')[3])
+        self.gain = float(self.meta_data["imroTbl"].split(sep=")")[1].split(sep=" ")[3])
 
         self.improv_logger.info("Completed setup for Generator")
 
@@ -49,14 +52,14 @@ class Generator(ZmqActor):
         self.improv_logger.info("Generator stopping")
         self.latency.save()
         return 0
-    
+
     def fetch(self):
         """Return 5ms of analog data stored on disk."""
         l_time = int(self.frame_num * self.window)
         r_time = int((self.frame_num * self.window) + self.window)
         if r_time > self.sample_data.shape[1]:
             return np.full((self.num_channels, self.window), np.nan)
-        return self.sample_data[50:self.num_channels+50, l_time:r_time].ravel()
+        return self.sample_data[50 : self.num_channels + 50, l_time:r_time].ravel()
 
     def run_step(self):
         time.sleep(0.001)
@@ -71,7 +74,6 @@ class Generator(ZmqActor):
         # convert the data from analog to voltage
         data = 1e6 * data * self.Vmax / self.Imax / self.gain
         data = data.reshape(self.num_channels, self.window)
-
 
         # send to processor
         data_id = str(os.getpid()) + str(uuid.uuid4())

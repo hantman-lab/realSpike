@@ -13,7 +13,7 @@ keywords = [
     "motor control",
     "science"
 ]
-requires-python = ">= 3.10"
+requires-python = ">= 3.12"
 dependencies = [
     "fastplotlib[imgui, notebook]",
     "scipy",
@@ -29,6 +29,8 @@ dependencies = [
 
 [project.optional-dependencies]
 tests = ["pytest"]
+lint = ["ruff"]
+dev = ["real_spike[tests, lint]"]
 
 [project.urls]
 Repository = "https://github.com/hantman-lab/realSpike"
@@ -39,3 +41,25 @@ Repository = "https://github.com/hantman-lab/realSpike"
 [build-system]
 requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
+
+
+# ===== Tooling
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "N", "B", "RUF", "TC"]
+ignore = [
+    "E501",   # Line too long
+    "E731",   # Do not assign a `lambda` expression, use a `def`
+    "B019",   # Use of `functools.lru_cache` or `functools.cache` on methods can lead to memory leaks
+    "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`"
+    "F403",
+    "F401",
+    "N803",
+    "N806",
+    "N999",
+    "F841",
+    "N816",
+]
