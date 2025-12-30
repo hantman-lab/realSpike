@@ -16,8 +16,6 @@ realSpike.egg-info/
 
 /data
 
-*.so
-
 *.npy
 
 experiment_*
