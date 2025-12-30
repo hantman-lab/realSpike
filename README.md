@@ -1,3 +1,5 @@
+[![CI](https://github.com/hantman-lab/realSpike/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/hantman-lab/realSpike/actions/workflows/ci.yml)
+
 # realSpike
 
 Real-time closed loop visualization and analysis for flexible neural manipulation
