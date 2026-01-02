@@ -139,9 +139,6 @@ if __name__ == "__main__":
                 # TODO: will need to update with the actual pattern size we are using
                 data = data.reshape(13, 13).astype(np.float32)
 
-                # increment trial number
-                TRIAL_NUMBER += 1
-
                 image_data = data * 2 - 1  # 0 becomes -1, 1 becomes +1
 
                 # Convert to RGB by stacking the grayscale 3 times
