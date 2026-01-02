@@ -4,11 +4,61 @@ import nidaqmx
 import time
 import datetime
 import pandas as pd
-import os
 import zmq
 import zmq.utils.monitor as m
 import numpy as np
 
+
+COLUMN_NAMES = ["trial number", "frame number", "time"]
+
+
+class TimingLogger:
+    def __init__(self, name: str, experiment_type: str = "holography"):
+        """
+        Parameters
+        ----------
+        name: str
+            name of the logger, typically the name you want the timings saved under (e.g. rb50)
+        """
+        self.name = name
+
+        if experiment_type not in ["holography", "fiber"]:
+            raise ValueError(
+                f"Experiment type must be one of 'holography', 'fiber', not {experiment_type}."
+            )
+
+        if experiment_type == "holography":
+            COLUMN_NAMES.append("pattern")
+        else:
+            COLUMN_NAMES.append("position")
+
+        self.df = pd.DataFrame(data=None, columns=COLUMN_NAMES)
+
+    def log(
+        self,
+        trial_number: int,
+        frame_number: int | None,
+        log_time: float,
+        experiment_condition: np.ndarray,
+    ):
+        """Add a latency to the dataframe"""
+
+        # save the recorded pattern/fiber position sent and the time sent
+        self.df.loc[len(self.df.index)] = [
+            int(trial_number),
+            frame_number,
+            log_time,
+            experiment_condition,
+        ]
+
+    def save(self):
+        """Save the dataframe to disk."""
+        self.df.to_pickle(
+            f"./timing/{self.name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.pkl"
+        )
+
+
+"----------------------------------------------------------------------------------------------------------------------"
 
 SOCKET_OPEN = True
 STIM_LENGTH_TIME = 0.005
@@ -17,15 +67,13 @@ TRIAL_NUMBER = 0
 
 LAST_STIM = time.time()
 
-COLUMN_NAMES = ["trial number", "stim time", "pattern"]
-df = pd.DataFrame(data=None, columns=COLUMN_NAMES)
+pattern_logger = TimingLogger("test-psychopy")
 
 
 # mostly for stopping the process when "stop" is called in the TUI
 def monitor_socket(monitor):
     """Monitors the socket sets global bool when socket has closed."""
     global SOCKET_OPEN
-    global df
     print("Monitoring socket...")
 
     while True:
@@ -36,8 +84,7 @@ def monitor_socket(monitor):
                 SOCKET_OPEN = True
             elif evt == zmq.EVENT_DISCONNECTED:
                 SOCKET_OPEN = False
-                # save the df
-                df.to_pickle(f"./experiment_{datetime.datetime.now()}.pkl")
+                pattern_logger.save()
                 print("Exiting process")
         except zmq.error.ZMQError:
             break
@@ -73,13 +120,6 @@ if __name__ == "__main__":
     win.mouseVisible = False
 
     while SOCKET_OPEN:
-        # laser safety check
-        t = time.time()
-        if LAST_STIM - t <= 1:
-            print("Previous stim occurred less than 1 second ago.")
-            LAST_STIM = t
-            time.sleep(1)
-
         # try to get from zmq buffer
         buff = None
         try:
@@ -88,45 +128,56 @@ if __name__ == "__main__":
             buff = None
 
         if buff is not None:
-            # Deserialize the buffer into a NumPy array
-            data = np.frombuffer(buff, dtype=np.float64)
+            # laser safety check
+            t = time.time()
+            if t - LAST_STIM <= 0.0025:
+                print("Previous stim occurred less than 2.5ms second ago.")
+            else:
+                # Deserialize the buffer into a NumPy array
+                data = np.frombuffer(buff, dtype=np.float64)
 
-            # TODO: will need to update with the actual pattern size we are using
-            data = data.reshape(13, 13).astype(np.float32)
+                # TODO: will need to update with the actual pattern size we are using
+                data = data.reshape(13, 13).astype(np.float32)
 
-            # increment trial number
-            TRIAL_NUMBER += 1
+                # increment trial number
+                TRIAL_NUMBER += 1
 
-            image_data = data * 2 - 1  # 0 becomes -1, 1 becomes +1
+                image_data = data * 2 - 1  # 0 becomes -1, 1 becomes +1
 
-            # Convert to RGB by stacking the grayscale 3 times
-            image_rgb = np.stack([image_data] * 3, axis=-1)
+                # Convert to RGB by stacking the grayscale 3 times
+                image_rgb = np.stack([image_data] * 3, axis=-1)
 
-            # Create ImageStim
-            stim = visual.ImageStim(win, image=image_rgb, size=win.size)
+                # Create ImageStim
+                stim = visual.ImageStim(win, image=image_rgb, size=win.size)
 
-            stim.draw()
-            win.flip()
+                stim.draw()
+                win.flip()
+                t = time.time()
+                LAST_STIM = t
 
-            # TODO: send analog voltage via NIDAQ to trigger laser
-            # with nidaqmx.Task() as task:
-            #     task.ao_channels.add_ao_voltage_chan("Dev1/ao1")
+                # TODO: get the time during when the laser is put to on so it is most accurate
+                # for now, right after showing the pattern, log the pattern
+                pattern_logger.log(TRIAL_NUMBER, None, t, data)
 
-            #     stim_time = datetime.datetime.now()
-            #     task.write(5.0)
+                # TODO: send analog voltage via NIDAQ to trigger laser
+                # with nidaqmx.Task() as task:
+                #     task.ao_channels.add_ao_voltage_chan("Dev1/ao1")
 
-            #     # hold pattern for stim length time
-            #     time.sleep(STIM_LENGTH_TIME)
+                #     stim_time = time.time()
+                #     task.write(5.0)
 
-            #     task.write(0.0)
+                #     # hold pattern for stim length time
+                #     time.sleep(STIM_LENGTH_TIME)
 
-            # only hold the pattern for small period
-            core.wait(0.25)
-            # Clear screen
-            win.flip()
+                #     task.write(0.0)
 
-            # save out all the things
-            # df.loc[len(df.index)] = [TRIAL_NUMBER, stim_time, data]
+                # pattern_logger.log(TRIAL_NUMBER, None, stim_time, data)
+                TRIAL_NUMBER += 1  # assuming one stim per trial
+
+                # only hold the pattern for small period
+                core.wait(0.25)  # remove this when doing the actual laser
+                # Clear screen
+                win.flip()
 
     win.close()
     core.quit()
