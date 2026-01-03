@@ -9,6 +9,7 @@ import sys
 import os
 import cv2
 import h5py
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from real_spike.utils import LatencyLogger, LazyVideo
@@ -22,6 +23,7 @@ GRAB = False
 # use session rb50/20250125
 video_dir = Path("/home/clewis/repos/holo-nbs/data/videos/")
 
+
 class Generator(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -29,14 +31,15 @@ class Generator(ZmqActor):
         self.name = "Generator"
         # start the video from queue
         if GRAB:
-            self.frame_num = 600 # grabs start later
+            self.frame_num = 600  # grabs start later
             _ = "grab"
         else:
             self.frame_num = 500
             _ = "lift"
-        self.latency = LatencyLogger(name=f"generator_behavior_detector_{_}",
-                                     max_size=20_000,
-                                    )
+        self.latency = LatencyLogger(
+            name=f"generator_behavior_detector_{_}",
+            max_size=20_000,
+        )
 
     def __str__(self):
         return f"Name: {self.name}, Data: {self.frame}"
@@ -46,22 +49,26 @@ class Generator(ZmqActor):
         if not video_dir.is_dir():
             raise FileNotFoundError(f"Video directory {video_dir} not found.")
 
-        data = h5py.File("/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb50/20250125/MAT_FILES/rb50_20250125_datastruct_pt3.mat", 'r')['data']
+        data = h5py.File(
+            "/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb50/20250125/MAT_FILES/rb50_20250125_datastruct_pt3.mat",
+            "r",
+        )["data"]
         # get single_reach idxs of all videos
-        single_reach = data['single']
+        single_reach = data["single"]
         self.idxs = np.where(single_reach)[0]
 
-
         if GRAB:
-            self.grabs = data['grab_ms']
+            self.grabs = data["grab_ms"]
         else:
-            self.lifts = data['lift_ms']
+            self.lifts = data["lift_ms"]
         self.i = 0
         # use lazy video to make array for reading frames from disk during run step
         self.video = self.get_video()
         self.offset = 0
 
-        assert self.video[0].shape == (290, 448, 3), "Frame shape is not (290, 448, 3). Pre-set crop measurement and bounding box assumptions might not work."
+        assert self.video[0].shape == (290, 448, 3), (
+            "Frame shape is not (290, 448, 3). Pre-set crop measurement and bounding box assumptions might not work."
+        )
 
         self.improv_logger.info("Completed setup for Generator")
 
@@ -81,13 +88,17 @@ class Generator(ZmqActor):
         elif idx < 99:
             num = f"0{idx + 1}"
         else:
-            num = str(idx+1)
+            num = str(idx + 1)
 
-        video_path = video_dir.joinpath(f"rb50_20250125_side_v{num}.avi") # zero-indexing in python vs. trial indexing; add 1
+        video_path = video_dir.joinpath(
+            f"rb50_20250125_side_v{num}.avi"
+        )  # zero-indexing in python vs. trial indexing; add 1
         return LazyVideo(video_path)
 
     def stop(self):
-        self.improv_logger.info(f"Generator stopping: {self.frame_num} frames generated")
+        self.improv_logger.info(
+            f"Generator stopping: {self.frame_num} frames generated"
+        )
         self.latency.save()
         return 0
 
@@ -127,7 +138,7 @@ class Generator(ZmqActor):
         try:
             self.q_out.put(data_id)
             t2 = time.perf_counter_ns()
-            self.latency.add(self.frame_num + self.offset, t2-t)
+            self.latency.add(self.frame_num + self.offset, t2 - t)
             self.client.client.expire(data_id, 5)
             self.frame_num += 1
 

@@ -6,6 +6,8 @@ import numpy as np
 import zmq
 
 "------------------------------------------------------------"
+
+
 # zmq stuff
 def connect(address: str = "127.0.0.1", port_number: int = 5558):
     """
@@ -35,6 +37,7 @@ def get_buffer(sub):
 
     return None
 
+
 "------------------------------------------------------------"
 # define reshape size
 RESHAPE_SIZE = (290, 448)
@@ -45,8 +48,7 @@ sub = connect(port_number=5557)
 "------------------------------------------------------------"
 
 # setup figure
-figure = fpl.Figure(size=(1_000, 600),
-                names=["side"])
+figure = fpl.Figure(size=(1_000, 600), names=["side"])
 
 for sp in figure:
     sp.axes.visible = False
@@ -56,6 +58,7 @@ IMAGE = None
 
 "------------------------------------------------------------"
 i = 0
+
 
 def update_figure(p):
     """Fetch the data from the socket, deserialize it, and put it in the queue for visualization."""

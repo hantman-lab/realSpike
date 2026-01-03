@@ -6,12 +6,14 @@ import numpy as np
 
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 GRAB = True
+
 
 class Visual(ZmqActor):
     def __init__(self, *args, **kwargs):
@@ -25,8 +27,8 @@ class Visual(ZmqActor):
         self.frame_num = 600
         self.frame = None
 
-        #self.reshape_size = (11, 4)
-        self.reshape_size =  (290, 448)
+        # self.reshape_size = (11, 4)
+        self.reshape_size = (290, 448)
 
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)

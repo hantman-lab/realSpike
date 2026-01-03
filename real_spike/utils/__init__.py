@@ -2,4 +2,4 @@ from .MUA import *
 from .acquisition import *
 from .latency import LatencyLogger
 from ._video import LazyVideo
-from .timing import TimingLogger
+from .timing import TimingLogger, BehaviorLogger

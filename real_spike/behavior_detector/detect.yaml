@@ -4,12 +4,12 @@ actors:
     class: Generator
 
   Detector:
-    package: actors.grab_detector
-    class: GrabDetector
+    package: actors.lift_detector
+    class: LiftDetector
 
   Pattern:
     package: actors.patterns
-    class: PatternGenerator
+    class: Pattern
 
   Visual: # optional
     package: actors.visual

@@ -1,20 +1,17 @@
-import pickle
-
 from improv.actor import ZmqActor
 import logging
 import time
-import cv2
 import uuid
-import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import numpy as np
 
-from real_spike.utils import *
+from real_spike.utils import BehaviorLogger, LatencyLogger
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 LIFT_DETECTED = False
+
 
 class LiftDetector(ZmqActor):
     def __init__(self, *args, **kwargs):
@@ -23,10 +20,11 @@ class LiftDetector(ZmqActor):
         self.name = "Detector"
         # start the video from queue
         self.frame_num = None
-        self.latency = LatencyLogger(name="lift_behavior_detector",
-                                     max_size=50_000,
-                                     )
-        self.offset = 0
+        self.trial_num = None
+        self.latency = LatencyLogger(
+            name="lift_detector",
+            max_size=50_000,
+        )
 
     def __str__(self):
         return f"Name: {self.name}, Data: {self.frame}"
@@ -34,15 +32,14 @@ class LiftDetector(ZmqActor):
     def setup(self):
         self.reshape_size = (290, 448)
         self.crop = [136, 155, 207, 220]
+        self.behavior_logger = BehaviorLogger("test-logger")
 
-        # reset the text file
-        with open('/home/clewis/repos/realSpike/data/rb50_lift.txt', 'w') as file_object:
-            pass
         self.improv_logger.info("Completed setup for behavior detector")
 
     def stop(self):
         self.improv_logger.info("Lift detector stopping")
         self.latency.save()
+        self.behavior_logger.save()
         return 0
 
     def run_step(self):
@@ -57,9 +54,10 @@ class LiftDetector(ZmqActor):
 
         if data_id is not None:
             t = time.perf_counter_ns()
-            data = np.frombuffer(self.client.client.get(data_id), np.uint16)
+            data = np.frombuffer(self.client.client.get(data_id), np.uint32)
             self.frame_num = int(data[-1])
-            self.frame = data[:-1].reshape(*self.reshape_size)
+            self.trial_num = int(data[-2])
+            self.frame = data[:-2].reshape(*self.reshape_size)
 
             # will never see a lift before the pellet actually comes forward
             if self.frame_num <= 600:
@@ -67,27 +65,25 @@ class LiftDetector(ZmqActor):
 
             if self.frame_num == 849:
                 if not LIFT_DETECTED:
-                    with open('/home/clewis/repos/realSpike/data/rb50_lift.txt', 'a') as f:
-                        f.write(f"LIFT NOT DETECTED\n")
-                    self.improv_logger.info(f"LIFT NOT DETECTED")
+                    self.behavior_logger.log(self.trial_num, "LIFT NOT DETECTED")
+                    self.improv_logger.info("LIFT NOT DETECTED")
                 LIFT_DETECTED = False
-                self.offset += 250
                 return
-
 
             if LIFT_DETECTED:
                 # lift already detected for this trial
                 return
 
             # y-dim comes first (height, width)
-            self.frame = self.frame[self.crop[2]:self.crop[3], self.crop[0]:self.crop[1]]
+            self.frame = self.frame[
+                self.crop[2] : self.crop[3], self.crop[0] : self.crop[1]
+            ]
 
             if (self.frame != 0).sum() >= 180:
                 LIFT_DETECTED = True
                 self.improv_logger.info(f"LIFT DETECTED: frame {self.frame_num}")
                 # output detection
-                with open('/home/clewis/repos/realSpike/data/rb50_lift.txt', 'a') as f:
-                    f.write(f"{self.frame_num}\n")
+                self.behavior_logger.log(self.trial_num, self.frame_num)
 
             # for every frame could send a zero or 1 to pattern generator, if 1 that means trigger
             store_id = str(os.getpid()) + str(uuid.uuid4())
@@ -96,9 +92,14 @@ class LiftDetector(ZmqActor):
             else:
                 detected_value = 0
 
-            self.client.client.set(store_id, detected_value, nx=False)
+            data = (
+                np.array([self.trial_num, self.frame_num, detected_value])
+                .ravel()
+                .astype(np.uint32)
+            )
+
+            self.client.client.set(store_id, data.tobytes(), nx=False)
             self.client.client.expire(store_id, 15)
             self.q_out.put(store_id)
             t2 = time.perf_counter_ns()
-            self.latency.add(self.frame_num + self.offset, t2 - t)
-
+            self.latency.add(self.trial_num, self.frame_num, t2 - t)

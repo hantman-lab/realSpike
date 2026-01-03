@@ -1,3 +1,4 @@
+# ruff: noqa
 from improv.actor import ZmqActor
 import logging
 import time
@@ -14,6 +15,7 @@ logger.setLevel(logging.INFO)
 
 GRAB_DETECTED = False
 
+
 class GrabDetector(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -21,9 +23,10 @@ class GrabDetector(ZmqActor):
         self.name = "Detector"
         # start the video from queue
         self.frame_num = None
-        self.latency = LatencyLogger(name="grab_behavior_detector",
-                                     max_size=50_000,
-                                     )
+        self.latency = LatencyLogger(
+            name="grab_behavior_detector",
+            max_size=50_000,
+        )
         self.offset = 0
         self.counter = 0
 
@@ -35,7 +38,9 @@ class GrabDetector(ZmqActor):
         self.crop = [250, 254, 128, 139]
 
         # reset the text file
-        with open('/home/clewis/repos/realSpike/data/rb50_grab.txt', 'w') as file_object:
+        with open(
+            "/home/clewis/repos/realSpike/data/rb50_grab.txt", "w"
+        ) as file_object:
             pass
         self.improv_logger.info("Completed setup for behavior detector")
 
@@ -62,7 +67,9 @@ class GrabDetector(ZmqActor):
 
             if self.frame_num == 849:
                 if not GRAB_DETECTED:
-                    with open('/home/clewis/repos/realSpike/data/rb50_grab.txt', 'a') as f:
+                    with open(
+                        "/home/clewis/repos/realSpike/data/rb50_grab.txt", "a"
+                    ) as f:
                         f.write(f"GRAB NOT DETECTED\n")
                     self.improv_logger.info(f"GRAB NOT DETECTED")
                 GRAB_DETECTED = False
@@ -75,7 +82,9 @@ class GrabDetector(ZmqActor):
                 return
 
             # y-dim comes first (height, width)
-            self.frame = self.frame[self.crop[2]:self.crop[3], self.crop[0]:self.crop[1]]
+            self.frame = self.frame[
+                self.crop[2] : self.crop[3], self.crop[0] : self.crop[1]
+            ]
 
             if (self.frame != 0).sum() >= 41:
                 self.counter += 1
@@ -83,7 +92,9 @@ class GrabDetector(ZmqActor):
                     GRAB_DETECTED = True
                     self.improv_logger.info(f"GRAB DETECTED: frame {self.frame_num}")
                     # output detection
-                    with open('/home/clewis/repos/realSpike/data/rb50_grab.txt', 'a') as f:
+                    with open(
+                        "/home/clewis/repos/realSpike/data/rb50_grab.txt", "a"
+                    ) as f:
                         f.write(f"{self.frame_num}\n")
 
             # for every frame could send a zero or 1 to pattern generator, if 1 that means trigger
