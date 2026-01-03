@@ -42,7 +42,9 @@ def connect(ip_address: str, port: int):
         sglx.c_sglx_destroyHandle(hSglx)
         return None
     else:
-        print("SpikeGLX has completed startup initialization, checking if acquiring data...")
+        print(
+            "SpikeGLX has completed startup initialization, checking if acquiring data..."
+        )
         # check if running
         running = c_bool()
         ok = sglx.c_sglx_isRunning(byref(running), hSglx)
@@ -60,12 +62,12 @@ def connect(ip_address: str, port: int):
 
 
 def fetch(
-        hSglx,
-        channel_num: int = 384,
-        sample_num: int = 150,
-        ip: int = 0,
-        js: int = 2,
-        downsample: int = 1
+    hSglx,
+    channel_num: int = 384,
+    sample_num: int = 150,
+    ip: int = 0,
+    js: int = 2,
+    downsample: int = 1,
 ):
     """
     Get the latency at differing interval and sample rates to be stored in a pandas dataframe.
@@ -86,13 +88,17 @@ def fetch(
         Factor to downsample by, every n-th sample taken
     """
     df_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "latency_df.h5")
-    COLUMN_NAMES = ["datetime", "num_channels", "num_samples", "downsample_factor", "avg_latency", "times"]
+    COLUMN_NAMES = [
+        "datetime",
+        "num_channels",
+        "num_samples",
+        "downsample_factor",
+        "avg_latency",
+        "times",
+    ]
 
     if not os.path.exists(df_path):
-        df = pd.DataFrame(
-            data=None,
-            columns=COLUMN_NAMES
-        )
+        df = pd.DataFrame(data=None, columns=COLUMN_NAMES)
     else:
         df = pd.read_hdf(df_path)
 
@@ -104,19 +110,31 @@ def fetch(
 
     times = list()
 
-    for i in tqdm(range(1000)):
+    for _ in tqdm(range(1000)):
         t = time.perf_counter_ns()
-        headCt = sglx.c_sglx_fetchLatest(byref(data), byref(n_data), hSglx, js, ip, sample_num, channels, nC, downsample)
+        headCt = sglx.c_sglx_fetchLatest(
+            byref(data),
+            byref(n_data),
+            hSglx,
+            js,
+            ip,
+            sample_num,
+            channels,
+            nC,
+            downsample,
+        )
         t2 = time.perf_counter_ns() - t
         times.append(t2 / 1e6)
 
     # append row to end of dataframe
-    df.loc[len(df.index)] = [datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                             channel_num,
-                             sample_num,
-                             downsample,
-                             sum(times) / len(times),
-                             times]
+    df.loc[len(df.index)] = [
+        datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+        channel_num,
+        sample_num,
+        downsample,
+        sum(times) / len(times),
+        times,
+    ]
 
     # save the dataframe
     df.to_hdf(df_path, key="df")
@@ -136,17 +154,19 @@ if __name__ == "__main__":
         # try different fetch parameters and log latency (num channels, num samples, downsample)
         num_channels = [120, 150, 250, 384]
         downsample_factor = [1, 2]  # no downsampling
-        num_samples = [30, 60, 90, 150, 300] # 1ms, 2ms, 3ms, 5ms, 10ms
+        num_samples = [30, 60, 90, 150, 300]  # 1ms, 2ms, 3ms, 5ms, 10ms
 
         for d in tqdm(downsample_factor):
             for n in tqdm(num_channels):
                 for s in tqdm(num_samples):
-                    fetch(hSglx=hSglx,
-                               channel_num=n,
-                               sample_num=s,
-                               ip=0,
-                               js=2,
-                               downsample=d)
+                    fetch(
+                        hSglx=hSglx,
+                        channel_num=n,
+                        sample_num=s,
+                        ip=0,
+                        js=2,
+                        downsample=d,
+                    )
 
         # will need to eventually close connection
         sglx.c_sglx_close(hSglx)

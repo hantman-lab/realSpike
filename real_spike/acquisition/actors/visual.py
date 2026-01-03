@@ -2,11 +2,6 @@ from improv.actor import ZmqActor
 import logging
 import zmq
 import time
-import numpy as np
-
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from real_spike.utils import LatencyLogger
 
@@ -17,23 +12,19 @@ logger.setLevel(logging.INFO)
 class Visual(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if "name" in kwargs:
-            self.name = kwargs["name"]
+        self.name = "Visual"
 
     def setup(self):
-        if not hasattr(self, "name"):
-            self.name = "Visual"
-        self.frame_num = 27
-        self.frame = None
+        self.frame_num = 0
+        self.data = None
 
-        self.latency = LatencyLogger("visual_acquisition")
+        self.latency = LatencyLogger("stream_visual")
 
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
-        self.socket.bind("tcp://127.0.0.1:5557")
-
-        # specify num channels to expect
-        self.num_channels = 150
+        address = "localhost"
+        port = 5557
+        self.socket.bind(f"tcp://{address}:{port}")
 
         self.improv_logger.info("Completed setup for Visual")
 
@@ -48,18 +39,14 @@ class Visual(ZmqActor):
         t = time.perf_counter_ns()
         try:
             data_id = self.q_in.get(timeout=0.05)
-        except Exception as e:
+        except Exception:
             pass
 
         if data_id is not None:
-            self.done = False
-            self.frame = np.frombuffer(self.client.client.get(data_id), np.float64).reshape(self.num_channels, 150)
+            # no need to unpack the bytes
+            self.data = self.client.client.get(data_id)
 
-            self.socket.send(self.frame.tobytes())
+            self.socket.send(self.data)
             t2 = time.perf_counter_ns()
             self.latency.add(self.frame_num, t2 - t)
             self.frame_num += 1
-
-            # delete data from store
-            #self.client.client.delete(data_id)
-

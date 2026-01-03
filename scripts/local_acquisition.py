@@ -4,10 +4,19 @@ I want to check if the latency is network based or the acquisition system.
 This file is just for doing the same latency checks as when I pull the data over the network.
 Basically running SpikeGLX on the same machine.
 """
+
 import numpy as np
 import time
 
-from real_spike.utils import LatencyLogger, get_gain, get_imax, get_vmax, fetch, butter_filter, get_spike_events
+from real_spike.utils import (
+    LatencyLogger,
+    get_gain,
+    get_imax,
+    get_vmax,
+    fetch,
+    butter_filter,
+    get_spike_events,
+)
 from real_spike.utils.sglx_pkg import sglx as sglx
 
 # two loggers, one for processing and one for generation
@@ -60,7 +69,6 @@ for i in range(1000):
         t = time.perf_counter_ns()
         data = butter_filter(data, 1000, 30_000)
         spike_times, spike_counts = get_spike_events(data, median)
-
 
         # log the latency
         processor_logger.add(i, time.perf_counter_ns() - t)

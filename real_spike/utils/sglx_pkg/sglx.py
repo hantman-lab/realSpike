@@ -1,12 +1,20 @@
+# ruff: noqa
 # -*- coding: utf-8 -*-
 
 from sys import version_info
 from ctypes import *
+import os
 
-if version_info >= (3,8):
-    sglx = CDLL( "/home/clewis/repos/realSpike/real_spike/utils/sglx_pkg/libSglxApi.so", winmode=0 )
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+path = os.path.join(root, "sglx_pkg/libSglxApi.so")
+
+if version_info >= (3, 8):
+    sglx = CDLL(
+        path,
+        winmode=0,
+    )
 else:
-    sglx = CDLL( "/home/clewis/repos/realSpike/real_spike/utils/sglx_pkg/libSglxApi.so" )
+    sglx = CDLL(path)
 
 
 # Usage ------------------
@@ -24,11 +32,13 @@ else:
 # Status callback for use with par2 and verifySHA1 calls.
 # sglx_demo_callback( status_string )
 #
-T_sglx_callback = CFUNCTYPE( None, c_char_p )
+T_sglx_callback = CFUNCTYPE(None, c_char_p)
+
 
 @T_sglx_callback
-def sglx_demo_callback( status ):
-    print( status )
+def sglx_demo_callback(status):
+    print(status)
+
 
 # After a call returning (nval) strings, retrieve the ith
 # string with this function. Index (ith) is zero-based.
@@ -149,7 +159,18 @@ c_sglx_enumDataDir.argtypes = [POINTER(c_int), c_void_p, c_int]
 #
 c_sglx_fetch = sglx.c_sglx_fetch
 c_sglx_fetch.restype = c_ulonglong
-c_sglx_fetch.argtypes = [POINTER(POINTER(c_short)), POINTER(c_int), c_void_p, c_int, c_int, c_ulonglong, c_int, POINTER(c_int), c_int, c_int]
+c_sglx_fetch.argtypes = [
+    POINTER(POINTER(c_short)),
+    POINTER(c_int),
+    c_void_p,
+    c_int,
+    c_int,
+    c_ulonglong,
+    c_int,
+    POINTER(c_int),
+    c_int,
+    c_int,
+]
 
 # Get binary stream data as linear array.
 # Samp count = MIN(max_samps,available).
@@ -170,7 +191,17 @@ c_sglx_fetch.argtypes = [POINTER(POINTER(c_short)), POINTER(c_int), c_void_p, c_
 #
 c_sglx_fetchLatest = sglx.c_sglx_fetchLatest
 c_sglx_fetchLatest.restype = c_ulonglong
-c_sglx_fetchLatest.argtypes = [POINTER(POINTER(c_short)), POINTER(c_int), c_void_p, c_int, c_int, c_int, POINTER(c_int), c_int, c_int]
+c_sglx_fetchLatest.argtypes = [
+    POINTER(POINTER(c_short)),
+    POINTER(c_int),
+    c_void_p,
+    c_int,
+    c_int,
+    c_int,
+    POINTER(c_int),
+    c_int,
+    c_int,
+]
 
 # Get ith global data directory.
 # Get main data directory by setting idir=0.
@@ -205,7 +236,13 @@ c_sglx_getGeomMap.argtypes = [POINTER(c_int), c_void_p, c_int]
 #
 c_sglx_getImecChanGains = sglx.c_sglx_getImecChanGains
 c_sglx_getImecChanGains.restype = c_bool
-c_sglx_getImecChanGains.argtypes = [POINTER(c_double), POINTER(c_double), c_void_p, c_int, c_int]
+c_sglx_getImecChanGains.argtypes = [
+    POINTER(c_double),
+    POINTER(c_double),
+    c_void_p,
+    c_int,
+    c_int,
+]
 
 # Get shankMap for NI stream. If successful the data are returned
 # as nval strings. The first string is the header: "ns nc ns" giving
@@ -358,14 +395,26 @@ c_sglx_getStreamSaveChans.argtypes = [POINTER(c_int), c_void_p, c_int, c_int]
 #
 c_sglx_getStreamSN = sglx.c_sglx_getStreamSN
 c_sglx_getStreamSN.restype = c_bool
-c_sglx_getStreamSN.argtypes = [POINTER(c_int), POINTER(c_char_p), c_void_p, c_int, c_int]
+c_sglx_getStreamSN.argtypes = [
+    POINTER(c_int),
+    POINTER(c_char_p),
+    c_void_p,
+    c_int,
+    c_int,
+]
 
 # Get voltage range of selected data stream.
 # ok = c_sglx_getStreamVoltageRange( byref(vMin), byref(vMax), hSglx, js, ip )
 #
 c_sglx_getStreamVoltageRange = sglx.c_sglx_getStreamVoltageRange
 c_sglx_getStreamVoltageRange.restype = c_bool
-c_sglx_getStreamVoltageRange.argtypes = [POINTER(c_double), POINTER(c_double), c_void_p, c_int, c_int]
+c_sglx_getStreamVoltageRange.argtypes = [
+    POINTER(c_double),
+    POINTER(c_double),
+    c_void_p,
+    c_int,
+    c_int,
+]
 
 # Return number of seconds since SpikeGLX application was launched,
 # or zero if error.
@@ -860,5 +909,3 @@ c_sglx_triggerGT.argtypes = [c_void_p, c_int, c_int]
 c_sglx_verifySha1 = sglx.c_sglx_verifySha1
 c_sglx_verifySha1.restype = c_bool
 c_sglx_verifySha1.argtypes = [T_sglx_callback, c_void_p, c_char_p]
-
-

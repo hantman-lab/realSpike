@@ -1,0 +1,65 @@
+# ===== Project info
+
+[project]
+dynamic = ["version"]
+name = "real_spike"
+description = "Real time ephys neural analysis and viz"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Caitlin Lewis" }]
+keywords = [
+    "ephys",
+    "flexible manipulation",
+    "motor control",
+    "science"
+]
+requires-python = ">= 3.12"
+dependencies = [
+    "fastplotlib[imgui, notebook]",
+    "scipy",
+    "tifffile",
+    "pandas",
+    "decord",
+    "matplotlib",
+    "h5py",
+    "pathlib",
+    "numpy",
+    "tqdm"
+]
+
+[project.optional-dependencies]
+tests = ["pytest"]
+lint = ["ruff"]
+dev = ["real_spike[tests, lint]"]
+
+[project.urls]
+Repository = "https://github.com/hantman-lab/realSpike"
+
+# ===== Building
+
+# Flit is great solution for simple pure-Python projects.
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+
+# ===== Tooling
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "N", "B", "RUF", "TC"]
+ignore = [
+    "E501",   # Line too long
+    "E731",   # Do not assign a `lambda` expression, use a `def`
+    "B019",   # Use of `functools.lru_cache` or `functools.cache` on methods can lead to memory leaks
+    "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`"
+    "F403",
+    "F401",
+    "N803",
+    "N806",
+    "N999",
+    "F841",
+    "N816",
+]
