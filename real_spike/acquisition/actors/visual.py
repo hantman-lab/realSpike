@@ -48,5 +48,5 @@ class Visual(ZmqActor):
 
             self.socket.send(self.data)
             t2 = time.perf_counter_ns()
-            self.latency.add(self.frame_num, t2 - t)
+            self.latency.add(None, self.frame_num, t2 - t)
             self.frame_num += 1

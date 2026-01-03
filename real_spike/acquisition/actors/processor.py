@@ -78,7 +78,7 @@ class Processor(ZmqActor):
                 # output the data
                 self.q_out.put(data_id)
                 t2 = time.perf_counter_ns()
-                self.latency.add(self.frame_num, t2 - t)
+                self.latency.add(None, self.frame_num, t2 - t)
                 self.frame_num += 1
 
             except Exception as e:

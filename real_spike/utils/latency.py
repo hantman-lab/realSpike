@@ -1,6 +1,6 @@
 import pandas as pd
 
-COLUMN_NAMES = ["frame number", "latency"]
+COLUMN_NAMES = ["trial number", "frame number", "latency"]
 
 
 class LatencyLogger:
@@ -22,14 +22,18 @@ class LatencyLogger:
         else:
             self.max_size = 5_000
 
-    def add(self, frame_number: int, latency: float):
+    def add(self, trial_number: int | None, frame_number: int, latency: float):
         """Add a latency to the dataframe"""
         # exceeded maximum number of frame entries
         if frame_number > self.max_size:
             return
 
         # save the recorded latency in ms
-        self.df.loc[len(self.df.index)] = [int(frame_number), latency / 1e6]
+        self.df.loc[len(self.df.index)] = [
+            trial_number,
+            int(frame_number),
+            latency / 1e6,
+        ]
 
     def save(self):
         """Save the dataframe to disk."""

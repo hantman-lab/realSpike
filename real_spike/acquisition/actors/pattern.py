@@ -68,5 +68,5 @@ class Pattern(ZmqActor):
                 self.pattern_logger.log(TRIAL_NO, self.frame_num, time.time(), pattern)
                 TRIAL_NO += 1
             t2 = time.perf_counter_ns()
-            self.latency.add(self.frame_num, t2 - t)
+            self.latency.add(None, self.frame_num, t2 - t)
             self.frame_num += 1
