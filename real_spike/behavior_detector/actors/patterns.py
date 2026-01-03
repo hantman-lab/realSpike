@@ -1,0 +1,73 @@
+from improv.actor import ZmqActor
+import logging
+import time
+import numpy as np
+import zmq
+import random
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from real_spike.utils import LatencyLogger
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+PATTERN_PATH = "/home/clewis/repos/realSpike/real_spike/utils/patterns.npy"
+
+class PatternGenerator(ZmqActor):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "name" in kwargs:
+            self.name = kwargs["name"]
+
+    def setup(self):
+        if not hasattr(self, "name"):
+            self.name = "Pattern Generator"
+        self.frame_num = 0
+        # load the patterns during setup
+        self.patterns = np.load(PATTERN_PATH)
+
+        # set up zmq connection to psychopy file
+        context = zmq.Context()
+        self.socket = context.socket(zmq.PUSH)
+        address = "0.0.0.0"
+        port = 5559
+        self.socket.bind(f"tcp://{address}:{port}")
+
+        self.latency = LatencyLogger("pattern_behavior_detector", max_size=50_000)
+
+        self.improv_logger.info("Completed setup for Pattern Generator")
+
+    def stop(self):
+        self.improv_logger.info("Pattern generation stopping")
+        self.latency.save()
+        self.socket.close()
+        return 0
+
+    def run_step(self):
+        # want to randomly select a pattern to generate and show
+        data_id = None
+        t = time.perf_counter_ns()
+        try:
+            data_id = self.q_in.get(timeout=0.05)
+        except Exception as e:
+            pass
+
+        if data_id is not None:
+            detected = int(self.client.client.get(data_id))
+            # get the pattern
+            if detected == 1:
+                pattern_id = random.randint(0, 28)
+                current_pattern = self.patterns[pattern_id]
+                # send the pattern
+                self.improv_logger.info("SENDING PATTERN")
+                # TODO: Something weird going on when sending the pattern, might be because I don't actually have
+                #  psychopy running should try it soon on other computer 11/21/25
+                #self.socket.send(current_pattern.ravel().tobytes())
+
+            t2 = time.perf_counter_ns()
+            self.latency.add(self.frame_num, t2 - t)
+            self.frame_num += 1
+
+        #    self.client.client.delete(data_id)
