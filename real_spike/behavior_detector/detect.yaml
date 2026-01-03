@@ -1,0 +1,33 @@
+actors:
+  Generator:
+    package: actors.generator_disk
+    class: Generator
+
+  Detector:
+    package: actors.lift_detector
+    class: LiftDetector
+
+  Pattern:
+    package: actors.patterns
+    class: Pattern
+
+  Visual: # optional
+    package: actors.visual
+    class: Visual
+
+connections:
+  Generator-Detector:
+    sources:
+      - Generator.q_out
+    sinks:
+      - Detector.q_in
+      - Visual.q_in
+  Detector-Pattern:
+    sources:
+      - Detector.q_out
+    sinks:
+      - Pattern.q_in
+
+
+settings:
+  store_size: 5_000_000_000

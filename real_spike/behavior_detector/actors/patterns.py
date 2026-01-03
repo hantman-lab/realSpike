@@ -3,13 +3,12 @@ import logging
 import time
 import numpy as np
 import zmq
+import random
 
 from real_spike.utils import LatencyLogger, TimingLogger
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-TRIAL_NO = 0
 
 
 class Pattern(ZmqActor):
@@ -21,10 +20,10 @@ class Pattern(ZmqActor):
         return f"Name: {self.name}"
 
     def setup(self):
-        self.frame_num = 0
-        self.p_id = None
+        self.frame_num = None
+        self.trial_num = None
 
-        self.latency = LatencyLogger("pattern_generator_acquisition")
+        self.latency = LatencyLogger("pattern_generator_behavior_detector")
         self.pattern_logger = TimingLogger("test-improv")
 
         context = zmq.Context()
@@ -34,7 +33,7 @@ class Pattern(ZmqActor):
         self.socket.bind(f"tcp://{address}:{port}")
 
         self.patterns = np.load(
-            "/home/clewis/repos/realSpike/real_spike/utils/patterns.npy"
+            "/home/clewis/repos/realSpike/real_spike/utils/fixed_patterns.npy"
         )
 
         self.improv_logger.info("Completed setup for Pattern Generator")
@@ -47,7 +46,6 @@ class Pattern(ZmqActor):
         return 0
 
     def run_step(self):
-        global TRIAL_NO
         data_id = None
         t = time.perf_counter_ns()
         try:
@@ -56,17 +54,20 @@ class Pattern(ZmqActor):
             pass
 
         if data_id is not None:
-            self.p_id = int.from_bytes(self.client.client.get(data_id))
-
-            # reconstruct pattern
-            pattern = self.patterns[self.p_id]
-            # for now, only send a pattern every 100 frames
-            if self.frame_num % 500 == 0:
-                # TODO: in the future, would only get a pattern when something is causing stim to trigger would
-                #  likely be once per trial stim would need to think of something else if it was multi-stim per trial
-                self.socket.send(pattern.ravel().tobytes())
-                self.pattern_logger.log(TRIAL_NO, self.frame_num, time.time(), pattern)
-                TRIAL_NO += 1
+            data = np.frombuffer(self.client.client.get(data_id), np.uint32)
+            self.trial_num = int(data[0])
+            self.frame_num = int(data[1])
+            detected = int(data[2])
+            # get the pattern
+            if detected == 1:
+                # randomly select one of the 5 pattern options
+                pattern_id = random.randint(0, 4)
+                pattern = self.patterns[pattern_id]
+                # send the pattern
+                self.improv_logger.info("SENDING PATTERN")
+                self.socket.send(pattern.ravel().astype(np.float64).tobytes())
+                self.pattern_logger.log(
+                    self.trial_num, self.frame_num, time.time(), pattern
+                )
             t2 = time.perf_counter_ns()
-            self.latency.add(None, self.frame_num, t2 - t)
-            self.frame_num += 1
+            self.latency.add(self.trial_num, self.frame_num, t2 - t)

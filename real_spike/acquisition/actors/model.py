@@ -59,5 +59,5 @@ class Model(ZmqActor):
             self.client.client.set(p_store_id, pattern_id.to_bytes(), nx=False)
             self.q_out.put(p_store_id)
             t2 = time.perf_counter_ns()
-            self.latency.add(self.frame_num, t2 - t)
+            self.latency.add(None, self.frame_num, t2 - t)
             self.frame_num += 1

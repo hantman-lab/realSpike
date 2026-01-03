@@ -24,7 +24,9 @@ dependencies = [
     "h5py",
     "pathlib",
     "numpy",
-    "tqdm"
+    "tqdm",
+    "opencv-python",
+    "tables"
 ]
 
 [project.optional-dependencies]
@@ -62,4 +64,5 @@ ignore = [
     "N999",
     "F841",
     "N816",
+    "B905"
 ]

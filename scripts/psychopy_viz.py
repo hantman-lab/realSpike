@@ -135,9 +135,11 @@ if __name__ == "__main__":
             else:
                 # Deserialize the buffer into a NumPy array
                 data = np.frombuffer(buff, dtype=np.float64)
+                print("Received stim data")
 
                 # TODO: will need to update with the actual pattern size we are using
-                data = data.reshape(13, 13).astype(np.float32)
+                # TODO: for behavior using a 2x2, for others might be a 4x4
+                data = data.reshape(2, 2).astype(np.float32)
 
                 image_data = data * 2 - 1  # 0 becomes -1, 1 becomes +1
 

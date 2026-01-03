@@ -17,6 +17,7 @@ realSpike.egg-info/
 /data
 
 /timing
+/behavior
 
 *.npy
 
