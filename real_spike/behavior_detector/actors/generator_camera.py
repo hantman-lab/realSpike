@@ -1,27 +1,18 @@
 from improv.actor import ZmqActor
-import tifffile
 import logging
 import time
 import uuid
 import numpy as np
-from pathlib import Path
-import sys
 import os
 import cv2
-import h5py
+from threading import Event
+import nidaqmx
+from nidaqmx.constants import AcquisitionType, WindowTriggerCondition1, Signal
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from real_spike.utils import LatencyLogger, LazyVideo
+from real_spike.utils import LatencyLogger
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-# toggle for which behavior to detect
-GRAB = False
-
-# use session rb50/20250125
-video_dir = Path("/home/clewis/repos/holo-nbs/data/videos/")
 
 
 class Generator(ZmqActor):
@@ -29,116 +20,92 @@ class Generator(ZmqActor):
         super().__init__(*args, **kwargs)
         self.frame = None
         self.name = "Generator"
-        # start the video from queue
-        if GRAB:
-            self.frame_num = 600  # grabs start later
-            _ = "grab"
-        else:
-            self.frame_num = 500
-            _ = "lift"
         self.latency = LatencyLogger(
-            name=f"generator_behavior_detector_{_}",
+            name="generator_behavior_camera",
             max_size=20_000,
         )
 
     def __str__(self):
         return f"Name: {self.name}, Data: {self.frame}"
 
+    def _analog_callback(self, task_handle, signal_type, callback_data):
+        print("Analog signal detected")
+        self.cue_signal.set()  # flip False -> True
+        return 0
+
     def setup(self):
-        # check to make sure I mounted the wasabi directory
-        if not video_dir.is_dir():
-            raise FileNotFoundError(f"Video directory {video_dir} not found.")
+        # TODO: any kind of connection to the machine that gets the frames from the camera; probably a zmq port
 
-        data = h5py.File(
-            "/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb50/20250125/MAT_FILES/rb50_20250125_datastruct_pt3.mat",
-            "r",
-        )["data"]
-        # get single_reach idxs of all videos
-        single_reach = data["single"]
-        self.idxs = np.where(single_reach)[0]
+        # bool for setting whether cue has been received
+        # put in separate thread from the nidaq task to make sure it gets set properly
+        self.cue_signal = Event()
 
-        if GRAB:
-            self.grabs = data["grab_ms"]
-        else:
-            self.lifts = data["lift_ms"]
-        self.i = 0
-        # use lazy video to make array for reading frames from disk during run step
-        self.video = self.get_video()
-        self.offset = 0
-
-        assert self.video[0].shape == (290, 448, 3), (
-            "Frame shape is not (290, 448, 3). Pre-set crop measurement and bounding box assumptions might not work."
-        )
+        self.trial_num = 0
+        self.frame_num = 500
 
         self.improv_logger.info("Completed setup for Generator")
 
-    def get_video(self):
-        if self.i > self.idxs.shape[0] - 1:
-            self.video = None
-            return
-
-        idx = self.idxs[self.i]
-        self.improv_logger.info(f"Trial: {idx}")
-        if GRAB:
-            self.improv_logger.info(f"ACTUAL: {500 + self.grabs[idx] / 2}")
-        else:
-            self.improv_logger.info(f"ACTUAL: {500 + self.lifts[idx] / 2}")
-        if idx < 9:
-            num = f"00{idx + 1}"
-        elif idx < 99:
-            num = f"0{idx + 1}"
-        else:
-            num = str(idx + 1)
-
-        video_path = video_dir.joinpath(
-            f"rb50_20250125_side_v{num}.avi"
-        )  # zero-indexing in python vs. trial indexing; add 1
-        return LazyVideo(video_path)
-
     def stop(self):
-        self.improv_logger.info(
-            f"Generator stopping: {self.frame_num} frames generated"
-        )
+        self.improv_logger.info("Generator stopping")
         self.latency.save()
         return 0
 
+    def _check_cue(self):
+        with nidaqmx.Task() as task:
+            # TODO: change this with the actual device and channel
+            task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
+
+            # TODO: change this to a little more than what the actual duration of the cue signal is
+            # 50 / 5_000 = 0.01 ms duration of samples
+            task.timing.cfg_samp_clk_timing(
+                rate=5000, sample_mode=AcquisitionType.FINITE, samps_per_chan=50
+            )
+
+            task.start()
+
+            data = np.asarray(task.read(100))
+
+            # TODO: change this to the actual voltage crossing
+            if np.any(data > 1.0):
+                self.cue_signal.set()
+
     def run_step(self):
-        # emulate camera, sleep for 2ms between frames
-        time.sleep(0.002)
-        if self.video is None:
-            # iterated through all
-            return
+        # fetched enough frames to detect lift, reset and wait for next trial
         if self.frame_num == 850:
-            # get next video
-            if GRAB:
-                self.frame_num = 600
-            else:
-                self.frame_num = 500
-            self.i += 1
-            self.video = self.get_video()
-            if self.video is None:
-                return
-            self.offset = 250 * self.i
+            # fetched 350 frames after cue, stop fetching for this trial
+            self.frame_num = 500
+            self.cue_signal.clear()
+            self.trial_num += 1
             return
 
-        # get the next frame
-        # lazy loading, so do not want to include in timing for right now
-        # will include when actually fetching
-        # inclusion of frame rate 500Hz, 1 frame every
+        # check for a cue signal only if at a new trial (frame num == 500)
+        if self.frame_num == 500:
+            self._check_cue()
 
-        self.frame = self.video[self.frame_num]
+        # check to see if trial cue has been received from NIDAQ
+        # will check for cue again on next frame call, might just not be at end of present trial
+        if not self.cue_signal.is_set():
+            return
+
         t = time.perf_counter_ns()
+
+        # TODO: get the frame via some request
+
+        self.frame = np.random.rand(512, 512)
+
         # convert to grayscale
         self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY).astype(np.uint16)
         # make a data_id
         data_id = str(os.getpid()) + str(uuid.uuid4())
 
-        data = np.append(self.frame.ravel(), self.frame_num).astype(np.uint16)
+        data = np.append(self.frame.ravel(), self.trial_num).astype(np.uint32)
+        data = np.append(data, self.frame_num).astype(np.uint32)
+
         self.client.client.set(data_id, data.tobytes(), nx=False)
         try:
             self.q_out.put(data_id)
             t2 = time.perf_counter_ns()
-            self.latency.add(self.frame_num + self.offset, t2 - t)
+            self.latency.add(self.trial_num, self.frame_num, t2 - t)
             self.client.client.expire(data_id, 5)
             self.frame_num += 1
 

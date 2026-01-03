@@ -26,7 +26,8 @@ dependencies = [
     "numpy",
     "tqdm",
     "opencv-python",
-    "tables"
+    "tables",
+    "nidaqmx"
 ]
 
 [project.optional-dependencies]
