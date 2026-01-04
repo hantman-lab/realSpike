@@ -57,9 +57,7 @@ class TimingLogger:
         parent_dir = os.path.dirname(os.path.abspath(__file__))
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         path = os.path.join(parent_dir, "timing", f"{self.name}_{timestamp}.pkl")
-        self.df.to_pickle(
-            path
-        )
+        self.df.to_pickle(path)
 
 
 "----------------------------------------------------------------------------------------------------------------------"
@@ -72,6 +70,7 @@ TRIAL_NUMBER = 0
 LAST_STIM = time.time()
 
 pattern_logger = TimingLogger("test-psychopy")
+
 
 # mostly for stopping the process when "stop" is called in the TUI
 def monitor_socket(monitor):
