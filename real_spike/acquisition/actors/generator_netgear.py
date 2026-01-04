@@ -79,13 +79,10 @@ class Generator(ZmqActor):
     def run_step(self):
         if self.frame_num % 1000 == 0:
             self.improv_logger.info(f"{self.frame_num} frames")
-        # TODO: monitor the store size and stop generator if it is too close to the max
-        if self.frame_num > 2500:
-            return
 
         # fetch using sglx handler
         t = time.perf_counter_ns()
-        data = fetch(self.hSglx, channel_ids=self.channel_ids)
+        data = fetch(self.hSglx, num_samps=self.window, channel_ids=self.channel_ids)
 
         # convert the data from analog to voltage
         data = 1e6 * data * self.Vmax / self.Imax / self.gain

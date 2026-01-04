@@ -24,12 +24,13 @@ class Pattern(ZmqActor):
         self.frame_num = 0
         self.p_id = None
 
-        self.latency = LatencyLogger("pattern_generator_acquisition")
+        self.latency = LatencyLogger("pattern_acquisition")
         self.pattern_logger = TimingLogger("test-improv")
 
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
-        address = "localhost"
+        address = "10.172.6.138"
+        # address = "localhost"
         port = 5559
         self.socket.bind(f"tcp://{address}:{port}")
 
@@ -64,6 +65,7 @@ class Pattern(ZmqActor):
             if self.frame_num % 500 == 0:
                 # TODO: in the future, would only get a pattern when something is causing stim to trigger would
                 #  likely be once per trial stim would need to think of something else if it was multi-stim per trial
+                self.improv_logger.info("SENDING PATTERN")
                 self.socket.send(pattern.ravel().tobytes())
                 self.pattern_logger.log(TRIAL_NO, self.frame_num, time.time(), pattern)
                 TRIAL_NO += 1
