@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-COLUMN_NAMES = ["trial number", "frame number", "time"]
+EXPERIMENT_COLUMNS = ["trial number", "frame number", "time"]
 BEHAVIOR_COLUMNS = ["trial number", "frame number"]
 
 
@@ -24,11 +24,11 @@ class TimingLogger:
             )
 
         if experiment_type == "holography":
-            COLUMN_NAMES.append("pattern")
+            EXPERIMENT_COLUMNS.append("pattern")
         else:
-            COLUMN_NAMES.append("position")
+            EXPERIMENT_COLUMNS.append("position")
 
-        self.df = pd.DataFrame(data=None, columns=COLUMN_NAMES)
+        self.df = pd.DataFrame(data=None, columns=EXPERIMENT_COLUMNS)
 
     def log(
         self,

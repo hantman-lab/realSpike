@@ -46,7 +46,7 @@ class Generator(ZmqActor):
         self.hSglx = sglx.c_sglx_createHandle()
 
         # connect to a given ip_address and port number
-        ip_address = "10.172.70.238"
+        ip_address = "10.172.7.201"
         port = 4142
 
         # only make a connection if not in debug mode
