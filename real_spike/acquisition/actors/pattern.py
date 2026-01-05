@@ -3,6 +3,7 @@ import logging
 import time
 import numpy as np
 import zmq
+from datetime import datetime
 
 from real_spike.utils import LatencyLogger, TimingLogger
 
@@ -29,7 +30,7 @@ class Pattern(ZmqActor):
 
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
-        address = "10.172.6.138"
+        address = "10.172.7.195"
         # address = "localhost"
         port = 5559
         self.socket.bind(f"tcp://{address}:{port}")
@@ -62,12 +63,17 @@ class Pattern(ZmqActor):
             # reconstruct pattern
             pattern = self.patterns[self.p_id]
             # for now, only send a pattern every 100 frames
-            if self.frame_num % 500 == 0:
+            if self.frame_num % 200 == 0:
                 # TODO: in the future, would only get a pattern when something is causing stim to trigger would
                 #  likely be once per trial stim would need to think of something else if it was multi-stim per trial
                 self.improv_logger.info("SENDING PATTERN")
+                # log the clock time pattern is sent
+                send_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
                 self.socket.send(pattern.ravel().tobytes())
-                self.pattern_logger.log(TRIAL_NO, self.frame_num, time.time(), pattern)
+
+                # log the trial num, frame num, time sent, and pattern sent
+                self.pattern_logger.log(TRIAL_NO, self.frame_num, send_time, pattern)
                 TRIAL_NO += 1
             t2 = time.perf_counter_ns()
             self.latency.add(None, self.frame_num, t2 - t)

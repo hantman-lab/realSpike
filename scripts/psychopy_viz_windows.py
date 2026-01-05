@@ -10,7 +10,7 @@ import numpy as np
 import os
 
 
-COLUMN_NAMES = ["trial number", "latency", "pattern"]
+COLUMN_NAMES = ["trial number", "latency"]
 
 
 class TimingLogger:
@@ -34,6 +34,7 @@ class TimingLogger:
             COLUMN_NAMES.append("position")
 
         self.df = pd.DataFrame(data=None, columns=COLUMN_NAMES)
+        print(self.df)
 
     def log(
         self,
@@ -42,6 +43,7 @@ class TimingLogger:
         experiment_condition: np.ndarray,
     ):
         """Add a latency to the dataframe"""
+        log_time = log_time / 1e6
 
         # save the recorded pattern/fiber position sent and the time sent
         self.df.loc[len(self.df.index)] = [
@@ -52,7 +54,7 @@ class TimingLogger:
 
     def save(self):
         """Save the dataframe to disk."""
-        parent_dir = "/home/clewis/repos/realSpike"
+        parent_dir = os.path.dirname(os.path.abspath(__file__))
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         path = os.path.join(parent_dir, "timing", f"{self.name}_{timestamp}.pkl")
         self.df.to_pickle(path)
@@ -92,7 +94,7 @@ def monitor_socket(monitor):
 
 if __name__ == "__main__":
     # connect to port to listen on
-    address = "localhost"
+    address = "10.172.7.195"
     port = 5559
 
     context = zmq.Context()
@@ -119,6 +121,9 @@ if __name__ == "__main__":
     # hide the cursor
     win.mouseVisible = False
 
+    # initiate a black screen to start
+    win.flip()
+
     while SOCKET_OPEN:
         # try to get from zmq buffer
         buff = None
@@ -129,7 +134,7 @@ if __name__ == "__main__":
 
         if buff is not None:
             # laser safety check
-            t = time.perf_counter()
+            t = time.perf_counter_ns()
             if (t - LAST_STIM) / 1e6 <= 0.0025:
                 print("Previous stim occurred less than 2.5ms second ago.")
             else:
@@ -139,7 +144,8 @@ if __name__ == "__main__":
 
                 # TODO: will need to update with the actual pattern size we are using
                 # TODO: for behavior using a 2x2, for others might be a 4x4
-                data = data.reshape(2, 2).astype(np.float32)
+                # data = data.reshape(2, 2).astype(np.float32)
+                data = data.reshape(13, 13).astype(np.float32)
 
                 image_data = data * 2 - 1  # 0 becomes -1, 1 becomes +1
 
@@ -161,7 +167,7 @@ if __name__ == "__main__":
                 # with nidaqmx.Task() as task:
                 #     task.ao_channels.add_ao_voltage_chan("Dev1/ao1")
 
-                #     stim_time = time.time()
+                #     stim_time = time.perf_counter_ns()
                 #     task.write(5.0)
 
                 #     # hold pattern for stim length time
@@ -169,14 +175,17 @@ if __name__ == "__main__":
 
                 #     task.write(0.0)
 
-                # pattern_logger.log(TRIAL_NUMBER, stim_time - t, data)
-                LAST_STIM = stim_time
+                # pattern_logger.log(TRIAL_NUMBER, stim_time, data)
                 TRIAL_NUMBER += 1  # assuming one stim per trial
+                LAST_STIM = stim_time
 
                 # only hold the pattern for small period
                 core.wait(0.25)  # remove this when doing the actual laser
                 # Clear screen
                 win.flip()
+
+    win.close()
+    core.quit()
 
     win.close()
     core.quit()
