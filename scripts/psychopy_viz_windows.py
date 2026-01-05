@@ -39,7 +39,7 @@ class TimingLogger:
         self,
         trial_number: int,
         frame_number: int | None,
-        log_time: float,
+        log_time: float | int | str,
         experiment_condition: np.ndarray,
     ):
         """Add a latency to the dataframe"""
@@ -157,8 +157,8 @@ if __name__ == "__main__":
 
                 stim.draw()
                 win.flip()
-                t = time.time()
-                LAST_STIM = t
+                t = time.perf_counter_ns()
+                LAST_STIM = time.time()
 
                 # TODO: get the time during when the laser is put to on so it is most accurate
                 # for now, right after showing the pattern, log the pattern

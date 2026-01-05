@@ -34,7 +34,7 @@ class TimingLogger:
         self,
         trial_number: int,
         frame_number: int | None,
-        time: float,
+        time: float | str,
         experiment_condition: np.ndarray,
     ):
         """Add a pattern send to the dataframe"""
@@ -50,7 +50,7 @@ class TimingLogger:
     def save(self):
         """Save the dataframe to disk."""
         self.df.to_pickle(
-            f"./timing/{self.name}_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.pkl"
+            f"./timing/{self.name}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pkl"
         )
 
 
@@ -89,5 +89,5 @@ class BehaviorLogger:
     def save(self):
         """Save the dataframe to disk."""
         self.df.to_pickle(
-            f"./behavior/{self.behavior}_{self.name}_{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.pkl"
+            f"./behavior/{self.behavior}_{self.name}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pkl"
         )

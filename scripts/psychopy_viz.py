@@ -54,7 +54,7 @@ class TimingLogger:
     def save(self):
         """Save the dataframe to disk."""
         self.df.to_pickle(
-            f"./timing/{self.name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.pkl"
+            f"./timing/{self.name}_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pkl"
         )
 
 
@@ -151,8 +151,8 @@ if __name__ == "__main__":
 
                 stim.draw()
                 win.flip()
-                t = time.time()
-                LAST_STIM = t
+                t = time.perf_counter_ns()
+                LAST_STIM = time.time()
 
                 # TODO: get the time during when the laser is put to on so it is most accurate
                 # for now, right after showing the pattern, log the pattern

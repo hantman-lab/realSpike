@@ -3,6 +3,7 @@ import logging
 import time
 import numpy as np
 import zmq
+from datetime import datetime
 
 from real_spike.utils import LatencyLogger, TimingLogger
 
@@ -67,7 +68,10 @@ class Pattern(ZmqActor):
                 #  likely be once per trial stim would need to think of something else if it was multi-stim per trial
                 self.improv_logger.info("SENDING PATTERN")
                 self.socket.send(pattern.ravel().tobytes())
-                self.pattern_logger.log(TRIAL_NO, self.frame_num, time.time(), pattern)
+                # log the trial num, frame num, time sent, and pattern sent
+                self.pattern_logger.log(
+                    TRIAL_NO, self.frame_num, time.perf_counter_ns(), pattern
+                )
                 TRIAL_NO += 1
             t2 = time.perf_counter_ns()
             self.latency.add(None, self.frame_num, t2 - t)
