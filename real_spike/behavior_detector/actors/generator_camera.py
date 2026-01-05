@@ -7,7 +7,7 @@ import os
 import cv2
 from threading import Event
 import nidaqmx
-from nidaqmx.constants import AcquisitionType, WindowTriggerCondition1, Signal
+from nidaqmx.constants import AcquisitionType
 
 from real_spike.utils import LatencyLogger
 
@@ -27,11 +27,6 @@ class Generator(ZmqActor):
 
     def __str__(self):
         return f"Name: {self.name}, Data: {self.frame}"
-
-    def _analog_callback(self, task_handle, signal_type, callback_data):
-        print("Analog signal detected")
-        self.cue_signal.set()  # flip False -> True
-        return 0
 
     def setup(self):
         # TODO: any kind of connection to the machine that gets the frames from the camera; probably a zmq port
