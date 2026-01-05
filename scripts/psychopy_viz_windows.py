@@ -187,6 +187,5 @@ if __name__ == "__main__":
     win.close()
     core.quit()
 
-
     win.close()
     core.quit()

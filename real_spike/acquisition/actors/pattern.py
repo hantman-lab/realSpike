@@ -30,7 +30,7 @@ class Pattern(ZmqActor):
 
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
-        address = "10.172.69.230"
+        address = "10.172.7.195"
         # address = "localhost"
         port = 5559
         self.socket.bind(f"tcp://{address}:{port}")
@@ -63,7 +63,7 @@ class Pattern(ZmqActor):
             # reconstruct pattern
             pattern = self.patterns[self.p_id]
             # for now, only send a pattern every 100 frames
-            if self.frame_num % 500 == 0:
+            if self.frame_num % 200 == 0:
                 # TODO: in the future, would only get a pattern when something is causing stim to trigger would
                 #  likely be once per trial stim would need to think of something else if it was multi-stim per trial
                 self.improv_logger.info("SENDING PATTERN")

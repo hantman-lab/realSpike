@@ -40,4 +40,3 @@ timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 path = os.path.join(parent_dir, "timing", f"network-test_{timestamp}.pkl")
 
 df.to_pickle(path)
-
