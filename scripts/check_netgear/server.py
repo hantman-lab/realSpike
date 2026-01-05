@@ -6,11 +6,12 @@ import numpy as np
 
 
 # make a zmq REP
-address = "10.172.6.138"
-port = 5559
+address = "10.172.69.230"
+port = 5558
 
 context = zmq.Context()
 socket = context.socket(zmq.REP)
+
 socket.bind(f"tcp://{address}:{port}")
 print(f"Server listening on port {port}...")
 
