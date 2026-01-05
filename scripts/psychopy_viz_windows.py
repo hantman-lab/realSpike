@@ -10,7 +10,7 @@ import numpy as np
 import os
 
 
-COLUMN_NAMES = ["trial number", "latency", "pattern"]
+COLUMN_NAMES = ["trial number", "latency"]
 
 
 class TimingLogger:
@@ -34,6 +34,7 @@ class TimingLogger:
             COLUMN_NAMES.append("position")
 
         self.df = pd.DataFrame(data=None, columns=COLUMN_NAMES)
+        print(self.df)
 
     def log(
         self,
@@ -42,11 +43,12 @@ class TimingLogger:
         experiment_condition: np.ndarray,
     ):
         """Add a latency to the dataframe"""
+        log_time = log_time / 1e6
 
         # save the recorded pattern/fiber position sent and the time sent
         self.df.loc[len(self.df.index)] = [
             int(trial_number),
-            log_time / 1e6,
+            log_time,
             experiment_condition,
         ]
 
@@ -92,7 +94,7 @@ def monitor_socket(monitor):
 
 if __name__ == "__main__":
     # connect to port to listen on
-    address = "10.172.6.138"
+    address = "10.172.7.195"
     port = 5559
 
     context = zmq.Context()
@@ -110,7 +112,7 @@ if __name__ == "__main__":
     win = visual.Window(
         size=[800, 800],
         screen=0,
-        fullscr=True,  # will need to flip this to True during actual experiments
+        fullscr=False,  # will need to flip this to True during actual experiments
         color="black",
         units="pix",
         checkTiming=False,
@@ -181,6 +183,10 @@ if __name__ == "__main__":
                 core.wait(0.25)  # remove this when doing the actual laser
                 # Clear screen
                 win.flip()
+
+    win.close()
+    core.quit()
+
 
     win.close()
     core.quit()
