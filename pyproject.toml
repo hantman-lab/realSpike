@@ -27,7 +27,7 @@ dependencies = [
     "tqdm",
     "opencv-python",
     "tables",
-    "nidaqmx"
+    "pyserial"
 ]
 
 [project.optional-dependencies]
