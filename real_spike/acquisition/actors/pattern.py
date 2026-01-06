@@ -30,7 +30,7 @@ class Pattern(ZmqActor):
 
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
-        address = "10.172.7.195"
+        address = "192.168.0.100"
         # address = "localhost"
         port = 5559
         self.socket.bind(f"tcp://{address}:{port}")

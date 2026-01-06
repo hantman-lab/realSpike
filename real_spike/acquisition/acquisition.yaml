@@ -1,6 +1,6 @@
 actors:
   Generator:
-    package: actors.generator_offline
+    package: actors.generator_netgear
     class: Generator
 
   Processor:
