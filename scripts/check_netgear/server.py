@@ -6,7 +6,7 @@ import numpy as np
 
 
 # make a zmq REP
-address = "10.172.69.230"
+address = "192.168.0.100"
 port = 5558
 
 context = zmq.Context()
