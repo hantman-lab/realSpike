@@ -10,7 +10,7 @@ import numpy as np
 import os
 
 
-COLUMN_NAMES = ["trial number", "frame number", "time"]
+COLUMN_NAMES = ["trial number", "latency"]
 
 
 class TimingLogger:
@@ -34,20 +34,20 @@ class TimingLogger:
             COLUMN_NAMES.append("position")
 
         self.df = pd.DataFrame(data=None, columns=COLUMN_NAMES)
+        print(self.df)
 
     def log(
         self,
         trial_number: int,
-        frame_number: int | None,
         log_time: float,
         experiment_condition: np.ndarray,
     ):
         """Add a latency to the dataframe"""
+        log_time = log_time / 1e6
 
         # save the recorded pattern/fiber position sent and the time sent
         self.df.loc[len(self.df.index)] = [
             int(trial_number),
-            frame_number,
             log_time,
             experiment_condition,
         ]
@@ -94,7 +94,7 @@ def monitor_socket(monitor):
 
 if __name__ == "__main__":
     # connect to port to listen on
-    address = "10.172.6.138"
+    address = "10.172.7.195"
     port = 5559
 
     context = zmq.Context()
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     win = visual.Window(
         size=[800, 800],
         screen=0,
-        fullscr=True,  # will need to flip this to True during actual experiments
+        fullscr=False,  # will need to flip this to True during actual experiments
         color="black",
         units="pix",
         checkTiming=False,
@@ -134,8 +134,8 @@ if __name__ == "__main__":
 
         if buff is not None:
             # laser safety check
-            t = time.time()
-            if t - LAST_STIM <= 0.0025:
+            t = time.perf_counter_ns()
+            if (t - LAST_STIM) / 1e6 <= 0.0025:
                 print("Previous stim occurred less than 2.5ms second ago.")
             else:
                 # Deserialize the buffer into a NumPy array
@@ -157,18 +157,17 @@ if __name__ == "__main__":
 
                 stim.draw()
                 win.flip()
-                t = time.time()
-                LAST_STIM = t
+                stim_time = time.perf_counter_ns()
 
                 # TODO: get the time during when the laser is put to on so it is most accurate
                 # for now, right after showing the pattern, log the pattern
-                pattern_logger.log(TRIAL_NUMBER, None, t, data)
+                pattern_logger.log(TRIAL_NUMBER, stim_time - t, data)
 
                 # TODO: send analog voltage via NIDAQ to trigger laser
                 # with nidaqmx.Task() as task:
                 #     task.ao_channels.add_ao_voltage_chan("Dev1/ao1")
 
-                #     stim_time = time.time()
+                #     stim_time = time.perf_counter_ns()
                 #     task.write(5.0)
 
                 #     # hold pattern for stim length time
@@ -176,13 +175,17 @@ if __name__ == "__main__":
 
                 #     task.write(0.0)
 
-                # pattern_logger.log(TRIAL_NUMBER, None, stim_time, data)
+                # pattern_logger.log(TRIAL_NUMBER, stim_time, data)
                 TRIAL_NUMBER += 1  # assuming one stim per trial
+                LAST_STIM = stim_time
 
                 # only hold the pattern for small period
                 core.wait(0.25)  # remove this when doing the actual laser
                 # Clear screen
                 win.flip()
+
+    win.close()
+    core.quit()
 
     win.close()
     core.quit()

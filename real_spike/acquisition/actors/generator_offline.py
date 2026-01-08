@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # streaming from disk flag
-DEBUG_MODE = True
+# when False, streaming over Duke network
+DEBUG_MODE = False
 
 
 class Generator(ZmqActor):
@@ -45,7 +46,7 @@ class Generator(ZmqActor):
         self.hSglx = sglx.c_sglx_createHandle()
 
         # connect to a given ip_address and port number
-        ip_address = "192.168.0.101"
+        ip_address = "10.172.7.176"
         port = 4142
 
         # only make a connection if not in debug mode
@@ -113,8 +114,8 @@ class Generator(ZmqActor):
         return self.sample_data[: self.num_channels, l_time:r_time].ravel()
 
     def run_step(self):
-        if self.frame_num > 3_999:
-            return
+        # if self.frame_num > 3_999:
+        #     return
         if self.frame_num % 1000 == 0:
             self.improv_logger.info(f"{self.frame_num} frames")
 
@@ -125,7 +126,9 @@ class Generator(ZmqActor):
         else:
             # fetch using sglx handler
             t = time.perf_counter_ns()
-            data = fetch(self.hSglx, channel_ids=self.channel_ids)
+            data = fetch(
+                self.hSglx, num_samps=self.window, channel_ids=self.channel_ids
+            )
 
         # convert the data from analog to voltage
         data = 1e6 * data * self.Vmax / self.Imax / self.gain

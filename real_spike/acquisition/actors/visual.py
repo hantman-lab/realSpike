@@ -18,7 +18,7 @@ class Visual(ZmqActor):
         self.frame_num = 0
         self.data = None
 
-        self.latency = LatencyLogger("stream_visual")
+        self.latency = LatencyLogger("acquisition_visual")
 
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
