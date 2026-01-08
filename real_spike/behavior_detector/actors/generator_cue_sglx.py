@@ -4,7 +4,6 @@ import time
 import uuid
 import numpy as np
 import os
-import cv2
 
 from real_spike.utils import LatencyLogger, fetch, get_multiplier
 from real_spike.utils.sglx_pkg import sglx as sglx
@@ -84,5 +83,4 @@ class CueGenerator(ZmqActor):
         else:
             t2 = time.perf_counter_ns()
             self.latency.add(self.trial_num, self.frame_num, t2 - t)
-            self.frame_num += 1
-            time.sleep(0.2)
+        self.frame_num += 1
