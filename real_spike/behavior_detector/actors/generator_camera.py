@@ -45,64 +45,39 @@ class Generator(ZmqActor):
         self.latency.save()
         return 0
 
-    def _check_cue(self):
-        with nidaqmx.Task() as task:
-            # TODO: change this with the actual device and channel
-            task.ai_channels.add_ai_voltage_chan("Dev1/ai0")
-
-            # TODO: change this to a little more than what the actual duration of the cue signal is
-            # 50 / 5_000 = 0.01 ms duration of samples
-            task.timing.cfg_samp_clk_timing(
-                rate=5000, sample_mode=AcquisitionType.FINITE, samps_per_chan=50
-            )
-
-            task.start()
-
-            data = np.asarray(task.read(100))
-
-            # TODO: change this to the actual voltage crossing
-            if np.any(data > 1.0):
-                self.cue_signal.set()
-
     def run_step(self):
-        # fetched enough frames to detect lift, reset and wait for next trial
-        if self.frame_num == 850:
-            # fetched 350 frames after cue, stop fetching for this trial
-            self.frame_num = 500
-            self.cue_signal.clear()
-            self.trial_num += 1
-            return
+        data_id = None
 
-        # check for a cue signal only if at a new trial (frame num == 500)
-        if self.frame_num == 500:
-            self._check_cue()
-
-        # check to see if trial cue has been received from NIDAQ
-        # will check for cue again on next frame call, might just not be at end of present trial
-        if not self.cue_signal.is_set():
-            return
-
-        t = time.perf_counter_ns()
-
-        # TODO: get the frame via some request
-
-        self.frame = np.random.rand(512, 512)
-
-        # convert to grayscale
-        self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY).astype(np.uint16)
-        # make a data_id
-        data_id = str(os.getpid()) + str(uuid.uuid4())
-
-        data = np.append(self.frame.ravel(), self.trial_num).astype(np.uint32)
-        data = np.append(data, self.frame_num).astype(np.uint32)
-
-        self.client.client.set(data_id, data.tobytes(), nx=False)
         try:
-            self.q_out.put(data_id)
-            t2 = time.perf_counter_ns()
-            self.latency.add(self.trial_num, self.frame_num, t2 - t)
-            self.client.client.expire(data_id, 5)
-            self.frame_num += 1
-
+            # get data_id from queue in
+            data_id = self.q_in.get(timeout=0.05)
         except Exception as e:
-            self.improv_logger.error(f"Generator Exception: {e}")
+            pass
+
+        if data_id is not None:
+            t = time.perf_counter_ns()
+            self.trial_num = self.client.client.get(data_id)
+            self.improv_logger.info("RECEIVED CUE, START FETCHING FRAMES")
+
+            # TODO: get the frame via some request
+
+            self.frame = np.random.rand(512, 512)
+
+            # convert to grayscale
+            self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY).astype(np.uint16)
+            # make a data_id
+            data_id = str(os.getpid()) + str(uuid.uuid4())
+
+            data = np.append(self.frame.ravel(), self.trial_num).astype(np.uint32)
+            data = np.append(data, self.frame_num).astype(np.uint32)
+
+            self.client.client.set(data_id, data.tobytes(), nx=False)
+            try:
+                self.q_out.put(data_id)
+                t2 = time.perf_counter_ns()
+                self.latency.add(self.trial_num, self.frame_num, t2 - t)
+                self.client.client.expire(data_id, 5)
+                self.frame_num += 1
+
+            except Exception as e:
+                self.improv_logger.error(f"Generator Exception: {e}")

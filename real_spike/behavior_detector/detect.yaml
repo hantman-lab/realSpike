@@ -1,6 +1,10 @@
 actors:
+  CueGenerator:
+    package: actors.generator_cue_sglx
+    class: CueGenerator
+
   Generator:
-    package: actors.generator_disk
+    package: actors.generator_camera
     class: Generator
 
   Detector:
@@ -16,6 +20,11 @@ actors:
     class: Visual
 
 connections:
+  Cue-Camera:
+    sources:
+      - CueGenerator.q_out
+    sinks:
+      -Generator.q_in
   Generator-Detector:
     sources:
       - Generator.q_out
