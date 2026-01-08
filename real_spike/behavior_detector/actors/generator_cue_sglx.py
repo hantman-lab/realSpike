@@ -85,3 +85,4 @@ class CueGenerator(ZmqActor):
             t2 = time.perf_counter_ns()
             self.latency.add(self.trial_num, self.frame_num, t2 - t)
             self.frame_num += 1
+            time.sleep(0.2)

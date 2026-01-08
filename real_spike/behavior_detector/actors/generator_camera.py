@@ -5,9 +5,6 @@ import uuid
 import numpy as np
 import os
 import cv2
-from threading import Event
-import nidaqmx
-from nidaqmx.constants import AcquisitionType
 
 from real_spike.utils import LatencyLogger
 
@@ -15,11 +12,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class Generator(ZmqActor):
+class CameraGenerator(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.frame = None
-        self.name = "Generator"
+        self.name = "CameraGenerator"
         self.latency = LatencyLogger(
             name="generator_behavior_camera",
             max_size=20_000,
@@ -31,14 +28,10 @@ class Generator(ZmqActor):
     def setup(self):
         # TODO: any kind of connection to the machine that gets the frames from the camera; probably a zmq port
 
-        # bool for setting whether cue has been received
-        # put in separate thread from the nidaq task to make sure it gets set properly
-        self.cue_signal = Event()
-
         self.trial_num = 0
         self.frame_num = 500
 
-        self.improv_logger.info("Completed setup for Generator")
+        self.improv_logger.info("Completed setup for Camera Generator")
 
     def stop(self):
         self.improv_logger.info("Generator stopping")
@@ -61,7 +54,7 @@ class Generator(ZmqActor):
 
             # TODO: get the frame via some request
 
-            self.frame = np.random.rand(512, 512)
+            self.frame = np.random.randint(0, 256, size=(290, 448, 3), dtype=np.uint8)
 
             # convert to grayscale
             self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY).astype(np.uint16)

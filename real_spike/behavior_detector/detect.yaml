@@ -3,9 +3,9 @@ actors:
     package: actors.generator_cue_sglx
     class: CueGenerator
 
-  Generator:
+  CameraGenerator:
     package: actors.generator_camera
-    class: Generator
+    class: CameraGenerator
 
   Detector:
     package: actors.lift_detector
@@ -24,10 +24,10 @@ connections:
     sources:
       - CueGenerator.q_out
     sinks:
-      -Generator.q_in
+      - CameraGenerator.q_in
   Generator-Detector:
     sources:
-      - Generator.q_out
+      - CameraGenerator.q_out
     sinks:
       - Detector.q_in
       - Visual.q_in
