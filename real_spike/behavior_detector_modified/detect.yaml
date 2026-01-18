@@ -7,17 +7,13 @@ actors:
     package: actors.frame_grabber
     class: CameraGenerator
 
-  Detector:
+  LiftDetector:
     package: actors.lift_detector
     class: LiftDetector
 
-  Laser:
+  LaserTrigger:
     package: actors.laser_trigger
     class: LaserTrigger
-
-  Visual: # optional
-    package: actors.visual
-    class: Visual
 
 connections:
   Cue-Camera:
@@ -29,13 +25,12 @@ connections:
     sources:
       - CameraGenerator.q_out
     sinks:
-      - Detector.q_in
-      - Visual.q_in
+      - LiftDetector.q_in
   Detector-Laser:
     sources:
-      - Detector.q_out
+      - LiftDetector.q_out
     sinks:
-      - Laser.q_in
+      - LaserTrigger.q_in
 
 settings:
   store_size: 5_000_000_000

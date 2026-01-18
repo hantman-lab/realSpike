@@ -64,9 +64,8 @@ class CueGenerator(ZmqActor):
         data = fetch(self.hSglx, js=0, num_samps=90, channel_ids=[2])
         data = data * self.conversion_factor
 
+        # detected a cue
         if np.any(data > 4.0):
-            # detected a cue
-
             # make a data_id
             data_id = str(os.getpid()) + str(uuid.uuid4())
 

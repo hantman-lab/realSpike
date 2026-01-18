@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 STIM_LENGTH_TIME = 0.005
-LAST_STIM = time.time()
+LAST_STIM = time.perf_counter()
 
 
 class LaserTrigger(ZmqActor):
@@ -38,7 +38,7 @@ class LaserTrigger(ZmqActor):
         return 0
 
     def run_step(self):
-        global STIM_LENGTH_TIME
+        global STIM_LENGTH_TIME, LAST_STIM
         data_id = None
 
         try:
@@ -51,6 +51,11 @@ class LaserTrigger(ZmqActor):
             t = time.perf_counter_ns()
             detected = self.client.client.get(data_id)
             if detected:
+                if (t - LAST_STIM) / 1e6 <= 0.0025:
+                    self.improv_logger.info(
+                        "Previous stim occurred less than 2.5ms second ago."
+                    )
+                    return
                 self.improv_logger.info("SENDING LASER SIGNAL")
                 with nidaqmx.Task() as task:
                     task.ao_channels.add_ao_voltage_chan("Dev1/ao1")
@@ -63,5 +68,6 @@ class LaserTrigger(ZmqActor):
 
                     task.write(0.0)
 
+            LAST_STIM = stim_time
             t2 = time.perf_counter_ns()
             self.latency.add(self.trial_num, self.frame_num, t2 - t)

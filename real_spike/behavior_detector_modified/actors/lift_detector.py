@@ -17,7 +17,7 @@ class LiftDetector(ZmqActor):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.frame = None
-        self.name = "Detector"
+        self.name = "LiftDetector"
         # start the video from queue
         self.frame_num = None
         self.trial_num = None
@@ -93,7 +93,7 @@ class LiftDetector(ZmqActor):
                 detected_value = 0
 
             self.client.client.set(store_id, detected_value, nx=False)
-            self.client.client.expire(store_id, 15)
+            self.client.client.expire(store_id, 5)
             self.q_out.put(store_id)
             t2 = time.perf_counter_ns()
             self.latency.add(self.trial_num, self.frame_num, t2 - t)

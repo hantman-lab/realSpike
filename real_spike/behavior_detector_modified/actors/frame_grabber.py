@@ -62,7 +62,7 @@ class CameraGenerator(ZmqActor):
             data = np.append(data, self.frame_num)
             data_id = str(os.getpid()) + str(uuid.uuid4())
 
-            self.client.client.set(data_id, data.tobytes(), nx=False)
+            self.client.client.set(data_id, data.astype(np.uint32).tobytes(), nx=False)
             try:
                 self.improv_logger.info("SENDING FRAME")
                 self.q_out.put(data_id)
