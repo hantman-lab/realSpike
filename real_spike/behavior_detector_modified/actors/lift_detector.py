@@ -92,7 +92,9 @@ class LiftDetector(ZmqActor):
             else:
                 detected_value = 0
 
-            self.client.client.set(store_id, detected_value, nx=False)
+            data = np.array([self.trial_num, detected_value]).tobytes()
+
+            self.client.client.set(store_id, data, nx=False)
             self.client.client.expire(store_id, 5)
             self.q_out.put(store_id)
             t2 = time.perf_counter_ns()

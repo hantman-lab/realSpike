@@ -1,7 +1,8 @@
 from improv.actor import ZmqActor
 import logging
 import time
-import nidaqmx
+import numpy as np
+import serial
 
 from real_spike.utils import LatencyLogger
 
@@ -18,8 +19,7 @@ class LaserTrigger(ZmqActor):
         self.frame = None
         self.name = "LaserTrigger"
         # start the video from queue
-        self.frame_num = None
-        self.trial_num = None
+        self.frame_num = 0
         self.latency = LatencyLogger(
             name="laser_trigger",
             max_size=50_000,
@@ -29,7 +29,9 @@ class LaserTrigger(ZmqActor):
         return f"Name: {self.name}, Data: {self.frame}"
 
     def setup(self):
-        # TODO: nidaqmx stuff setup
+        self.patterns = np.load(
+            "/home/clewis/repos/holo-nbs/experiment_data/preset_patterns.npy"
+        )
         self.improv_logger.info("Completed setup for laser trigger")
 
     def stop(self):
@@ -49,25 +51,26 @@ class LaserTrigger(ZmqActor):
 
         if data_id is not None:
             t = time.perf_counter_ns()
-            detected = self.client.client.get(data_id)
+            data = np.from_buffer(self.client.client.get(data_id))
+            trial_num = data[0]
+            detected = data[1]
             if detected:
+                # check for control trial, do not turn on laser if so
+                if np.count_nonzero(self.patterns[trial_num]) == 0:
+                    self.improv_logger.info("CONTROL TRIAL")
+                    return
                 if (t - LAST_STIM) / 1e6 <= 0.0025:
                     self.improv_logger.info(
                         "Previous stim occurred less than 2.5ms second ago."
                     )
                     return
                 self.improv_logger.info("SENDING LASER SIGNAL")
-                with nidaqmx.Task() as task:
-                    task.ao_channels.add_ao_voltage_chan("Dev1/ao1")
+                stim_time = time.perf_counter_ns()
+                # send command out on serial port
+                with serial.Serial("/dev/ttyACM0", 115200, timeout=1) as ser:
+                    ser.write(b"STIM 13 4 0 5000 10000 1\n")
+                LAST_STIM = stim_time
 
-                    stim_time = time.perf_counter_ns()
-                    task.write(5.0)
-
-                    # hold pattern for stim length time
-                    time.sleep(STIM_LENGTH_TIME)
-
-                    task.write(0.0)
-
-            LAST_STIM = stim_time
             t2 = time.perf_counter_ns()
             self.latency.add(self.trial_num, self.frame_num, t2 - t)
+            self.frame_num += 1
