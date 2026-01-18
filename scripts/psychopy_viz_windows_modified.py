@@ -96,13 +96,16 @@ if __name__ == "__main__":
         if bytes_available > 0:
             line = ser.readline().decode(errors="ignore").strip()
             if line == "1":
-                print("CUE DETECTED")
+                print(f"CUE DETECTED, TRIAL NUMBER: {TRIAL_NUMBER}")
                 img = patterns[TRIAL_NUMBER].reshape(2, 2)
-                img = 1 - 2 * img
+                img = 2 * img - 1
+                # need to flip upside down
+                img = np.flipud(img)
                 stim = visual.ImageStim(
                     win,
                     image=img,
-                    size=(2 * px_per_cell, 2 * px_per_cell),
+                    size=win.size,
+                    # size=(2 * px_per_cell, 2 * px_per_cell),
                     units="pix",
                     interpolate=False,  # VERY IMPORTANT
                 )
