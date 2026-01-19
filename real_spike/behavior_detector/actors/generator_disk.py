@@ -9,12 +9,9 @@ import time
 import uuid
 import numpy as np
 from pathlib import Path
-import sys
 import os
 import cv2
 import pandas as pd
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from real_spike.utils import LatencyLogger, LazyVideo
 

@@ -80,7 +80,7 @@ def fetch(hSglx, ip=0, js=2, num_samps=150, channel_ids=None):
     ip : int, default 0
         The probe number
     js : int, default 2
-        The type of stream (imec=2)
+        The type of stream (imec=2, nidaq=0)
     num_samps : int, default 150
         The number of samples to fetch, 1ms = 30samples (fetching 5ms of data by default)
     channel_ids : List[int], default None
@@ -110,6 +110,17 @@ def get_sample_rate(hSglx, js=2, ip=0):
     """Returns the samples rate."""
     srate = sglx.c_sglx_getStreamSampleRate(hSglx, js, ip)
     return srate
+
+
+def get_multiplier(hSglx, js=0, ip=0, chan=2):
+    """Returns multiplier to convert digital signal to voltage."""
+    multiplier = c_double()
+    ok = sglx.c_sglx_getStreamI16ToVolts(byref(multiplier), hSglx, js, ip, chan)
+    if ok:
+        return multiplier.value
+    else:
+        print("error [{}]\n".format(sglx.c_sglx_getError(hSglx)))
+        return 1
 
 
 def get_meta(file_path: str) -> Dict[str, str]:
