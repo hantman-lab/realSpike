@@ -20,13 +20,11 @@ if __name__ == "__main__":
     #     print(f"  Serial Number: {p.serial_number}")
     #     print()
 
-
     ser = serial.Serial("/dev/ttyACM0", 115200, timeout=5)
     print("Opened serial port")
     time.sleep(2)
 
     for i in range(5):
-
         print(f"TURNING LASER ON, ATTEMPT {i}")
         ser.write(b"STIM 13 4 0 5000 10000 1\n")
         ser.flush()

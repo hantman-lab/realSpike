@@ -62,30 +62,30 @@ class CameraGenerator(ZmqActor):
             data = np.append(data, self.frame_num)
             data_id = str(os.getpid()) + str(uuid.uuid4())
 
-            self.client.client.set(data_id, data.astype(np.uint32).tobytes(), nx=False)
-            try:
-                self.improv_logger.info("SENDING FRAME")
-                self.q_out.put(data_id)
-                t2 = time.perf_counter_ns()
-                self.latency.add(self.trial_num, self.frame_num, t2 - t)
-                self.client.client.expire(data_id, 5)
-                self.frame_num += 1
-            except Exception as e:
-                self.improv_logger.error(f"Generator Exception: {e}")
-        else:  # cue has not been detected yet
-            data_id = None
-
-            try:
-                # get data_id from queue in
-                data_id = self.q_in.get(timeout=0.05)
-            except Exception as e:
-                pass
-
-            if data_id is not None:
-                self.trial_num = self.client.client.get(data_id)
-                self.improv_logger.info(f"CUE RECEIVED, TRIAL_NUM: {self.trial_num}")
-                self.frame_num = 500
-                CUE_DETECTED = True
-                t2 = time.perf_counter_ns()
-                self.latency.add(self.trial_num, self.frame_num, t2 - t)
-                return
+        #     self.client.client.set(data_id, data.astype(np.uint32).tobytes(), nx=False)
+        #     try:
+        #         self.improv_logger.info("SENDING FRAME")
+        #         self.q_out.put(data_id)
+        #         t2 = time.perf_counter_ns()
+        #         self.latency.add(self.trial_num, self.frame_num, t2 - t)
+        #         self.client.client.expire(data_id, 5)
+        #         self.frame_num += 1
+        #     except Exception as e:
+        #         self.improv_logger.error(f"Generator Exception: {e}")
+        # else:  # cue has not been detected yet
+        #     data_id = None
+        #
+        #     try:
+        #         # get data_id from queue in
+        #         data_id = self.q_in.get(timeout=0.05)
+        #     except Exception as e:
+        #         pass
+        #
+        #     if data_id is not None:
+        #         self.trial_num = self.client.client.get(data_id)
+        #         self.improv_logger.info(f"CUE RECEIVED, TRIAL_NUM: {self.trial_num}")
+        #         self.frame_num = 500
+        #         CUE_DETECTED = True
+        #         t2 = time.perf_counter_ns()
+        #         self.latency.add(self.trial_num, self.frame_num, t2 - t)
+        #         return

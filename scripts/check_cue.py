@@ -22,7 +22,7 @@ while True:
 
     if bytes_available > 0:
         line = ser.readline().decode(errors="ignore").strip()
-       # print(line)
+        # print(line)
         if line == "1":
             CUE_NUM += 1
             # Trigger received

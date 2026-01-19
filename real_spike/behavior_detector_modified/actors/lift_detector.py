@@ -1,8 +1,7 @@
 from improv.actor import ZmqActor
 import logging
 import time
-import uuid
-import os
+import serial
 import numpy as np
 
 from real_spike.utils import BehaviorLogger, LatencyLogger
@@ -34,6 +33,8 @@ class LiftDetector(ZmqActor):
         self.crop = [136, 155, 207, 220]
         self.behavior_logger = BehaviorLogger("test-logger")
 
+        self.ser = serial.Serial("/dev/ttyACM0", 115200, timeout=5)
+
         self.improv_logger.info("Completed setup for behavior detector")
 
     def stop(self):
@@ -41,6 +42,10 @@ class LiftDetector(ZmqActor):
         self.latency.save()
         self.behavior_logger.save()
         return 0
+
+    def _trigger_laser(self):
+        self.ser.write(b"STIM 13 4 0 5000 10000 1\n")
+        self.ser.flush()
 
     def run_step(self):
         global LIFT_DETECTED
@@ -85,17 +90,9 @@ class LiftDetector(ZmqActor):
                 # output detection
                 self.behavior_logger.log(self.trial_num, self.frame_num)
 
-            # for every frame could send a zero or 1 to laser, if 1 that means trigger
-            store_id = str(os.getpid()) + str(uuid.uuid4())
             if LIFT_DETECTED:
-                detected_value = 1
-            else:
-                detected_value = 0
+                self.improv_logger.info("SENDING LASER SIGNAL")
+                self._trigger_laser()
 
-            data = np.array([self.trial_num, detected_value]).tobytes()
-
-            self.client.client.set(store_id, data, nx=False)
-            self.client.client.expire(store_id, 5)
-            self.q_out.put(store_id)
             t2 = time.perf_counter_ns()
             self.latency.add(self.trial_num, self.frame_num, t2 - t)

@@ -20,6 +20,7 @@ print(f"ZMQ REQ/REP server listening on port {port}")
 current_folder = None
 current_frame = None
 
+
 def get_latest_folder(base_dir):
     subdirs = [
         os.path.join(base_dir, d)
