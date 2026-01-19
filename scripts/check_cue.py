@@ -22,8 +22,12 @@ while True:
 
     if bytes_available > 0:
         line = ser.readline().decode(errors="ignore").strip()
+       # print(line)
         if line == "1":
             CUE_NUM += 1
             # Trigger received
             print(f"RECEIVED CUE {CUE_NUM}")
+            time.sleep(1.5)
+            ser.flush()
+            ser.reset_input_buffer()
         # ser.reset_input_buffer()
