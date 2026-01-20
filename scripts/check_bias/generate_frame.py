@@ -1,4 +1,4 @@
-"""Use this file when working on the same system. Streaming locally. File will generate frames at 500Hz."""
+"""Use this file when working on the same system. Streaming locally."""
 
 import os
 import glob
@@ -36,7 +36,6 @@ def get_latest_frame(folder):
     files = glob.glob(os.path.join(folder, "*.jpg"))
     if not files:
         return None
-
     return max(
         files,
         key=lambda f: int(os.path.splitext(os.path.basename(f))[0].split("_")[-1]),
@@ -52,22 +51,32 @@ while True:
     if latest_folder != current_folder:
         current_folder = latest_folder
 
+    # perhaps not started recording yet
     if current_folder is None:
-        continue
+        print("No current folder")
+        d = np.zeros((290, 448), np.uint32).ravel()
+        d = np.append(d, 0)
+        socket.send(d.tobytes())
 
-    # Get the most recent frame
     current_frame = get_latest_frame(current_folder)
+
     if current_frame is None:
-        continue
+        print("No current frame")
+        d = np.zeros((290, 448), np.uint32).ravel()
+        d = np.append(d, 0)
+        socket.send(d.tobytes())
+    else:
+        # get the trial num to send with the grayscale image
+        trial_num = int(current_frame.split("/")[-1].split(".")[0].split("_")[-1])
 
-    # get the trial num to send with the grayscale image
-    trial_num = int(current_frame.split("/")[-1].split(".")[0].split("_")[-1])
+        img = cv2.imread(current_frame, cv2.IMREAD_GRAYSCALE)
 
-    img = cv2.imread(current_frame, cv2.IMREAD_GRAYSCALE)
+        # append the frame number
+        data = np.append(img.ravel(), trial_num).astype(np.uint32)
 
-    # append the frame number
-    data = np.append(img.ravel(), trial_num).astype(np.uint32)
+        # Send as raw bytes
+        print("sending frame")
+        socket.send(data)
 
-    # Send as raw bytes
-    print("sending frame")
-    socket.send(data)
+        # reset frame
+        current_frame = None

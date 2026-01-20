@@ -39,6 +39,8 @@ if __name__ == "__main__":
         print(frame_num)
         frame = data[:-1].reshape(RESHAPE_SIZE)
 
+        time.sleep(0.1)
+
     # save dataframe
     parent_dir = os.path.dirname(os.path.abspath(__file__))
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
