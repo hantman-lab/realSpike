@@ -8,6 +8,7 @@ port_number = 5552
 context = zmq.Context()
 socket = context.socket(zmq.PUB)
 socket.bind(f"tcp://{address}:{port_number}")
+print(f"Connected to {address}:{port_number}")
 
 CUE_NUM = 0
 

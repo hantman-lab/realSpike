@@ -2,11 +2,10 @@ from psychopy import visual, core, event
 import datetime
 import pandas as pd
 import numpy as np
-import os
+from pathlib import Path
 import zmq
 import zmq.utils.monitor as m
 import threading
-from pathlib import Path
 
 COLUMN_NAMES = ["trial number"]
 
