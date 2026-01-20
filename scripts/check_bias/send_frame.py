@@ -1,4 +1,4 @@
-"""File that should be placed on the same machine as bias camera system."""
+"""Put this on the same machine as bias."""
 
 import os
 import glob

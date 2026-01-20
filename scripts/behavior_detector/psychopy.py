@@ -1,3 +1,5 @@
+"""File to put on Pattern Display Monitor (PDM) that will receive cue from improv and refresh screen ahead of detection."""
+
 from psychopy import visual, core, event
 import datetime
 import pandas as pd

@@ -1,3 +1,5 @@
+"""File for getting cue from WaveSurfer that will be passed into improv."""
+
 import serial
 import time
 import zmq
