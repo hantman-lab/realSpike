@@ -50,20 +50,21 @@ while True:
     latest_folder = get_latest_folder(VIDEO_DIR)
     if latest_folder != current_folder:
         current_folder = latest_folder
+        print(current_folder)
 
     # perhaps not started recording yet
     if current_folder is None:
         print("No current folder")
-        d = np.zeros((290, 448), np.uint32).ravel()
-        d = np.append(d, 0)
+        d = np.random.rand(290, 448).ravel()
+        d = np.append(d, 0).astype(np.uint32)
         socket.send(d.tobytes())
 
     current_frame = get_latest_frame(current_folder)
 
     if current_frame is None:
         print("No current frame")
-        d = np.zeros((290, 448), np.uint32).ravel()
-        d = np.append(d, 0)
+        d = np.random.rand(290, 448).ravel()
+        d = np.append(d, 0).astype(np.uint32)
         socket.send(d.tobytes())
     else:
         # get the trial num to send with the grayscale image
@@ -71,7 +72,11 @@ while True:
 
         img = cv2.imread(current_frame, cv2.IMREAD_GRAYSCALE)
 
-        # append the frame number
+        if img is None:
+            print(trial_num)
+            break
+
+            # append the frame number
         data = np.append(img.ravel(), trial_num).astype(np.uint32)
 
         # Send as raw bytes
