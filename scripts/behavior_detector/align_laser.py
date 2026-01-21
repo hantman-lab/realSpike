@@ -24,7 +24,7 @@ win.flip()
 px_per_cell = 160
 
 
-img = np.array([[1, 1], [1, 1]])
+img = np.array([[1, 1], [1, 1]]).reshape(2, 2)
 img = 2 * img - 1
 stim = visual.ImageStim(
     win,
