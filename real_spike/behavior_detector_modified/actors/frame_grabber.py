@@ -30,7 +30,8 @@ class CameraGenerator(ZmqActor):
     def setup(self):
         # every time we get a new cue, want to increment trial number
         self.trial_num = -1
-        self.frame_num = -1
+        self.frame_num = 0
+        self.fetch_counter = 0
 
         # open REQ/REP socket to bias computer over netgear switch
         ip_address = "192.168.0.102"
@@ -81,11 +82,11 @@ class CameraGenerator(ZmqActor):
                 return
 
         # at end of fetch
-        if self.frame_num == 852:
+        if self.fetch_counter >= 118:
             # reset cue detector
             CUE_DETECTED = False
             # reset frame num
-            self.frame_num = -1
+            self.fetch_counter = 0
             return
         else:
             # fetch a frame
@@ -101,5 +102,7 @@ class CameraGenerator(ZmqActor):
                 t2 = time.perf_counter_ns()
                 self.latency.add(self.trial_num, self.frame_num, t2 - t)
                 self.client.client.expire(data_id, 5)
+                self.frame_num += 1
+                self.fetch_counter += 1
             except Exception as e:
                 self.improv_logger.error(f"Generator Exception: {e}")

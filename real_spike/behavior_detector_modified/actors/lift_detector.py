@@ -41,7 +41,7 @@ class LiftDetector(ZmqActor):
 
     def stop(self):
         self.improv_logger.info("Lift detector stopping")
-        self.ser.close()
+        # self.ser.close()
         self.latency.save()
         self.behavior_logger.save()
         return 0
@@ -70,12 +70,15 @@ class LiftDetector(ZmqActor):
             if self.frame_num <= 600:
                 return
 
-            if self.frame_num >= 849:
+            if self.frame_num == 852:
                 if not LIFT_DETECTED:
                     self.behavior_logger.log(self.trial_num, "LIFT NOT DETECTED", None)
-                    self.improv_logger.info("LIFT NOT DETECTED")
+                    self.improv_logger.info(
+                        f"TRIAL {self.trial_num}, FRAME {self.frame_num}, LIFT NOT DETECTED"
+                    )
                 LIFT_DETECTED = False
                 self.trial_num += 1
+                self.frame_num = -1
                 return
 
             # lift already detected for this trial
