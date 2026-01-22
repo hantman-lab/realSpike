@@ -21,7 +21,7 @@ PRE-EXPERIMENT TODOs
     - The script will display a full field pattern and turn the laser on for 30s
     - To turn the laser on, the usb for the laser will need to be plugged into the PDM
     - **NOTE:** The PDM does not need to be on the netgear switch to run this test
-    - Instructions for aligning the laser can be found [here](https://docs.google.com/document/d/1BRN5fjz8DTYgcB3r8oJ438RY_BqFJK8Sj2__ErfupG4/edit?usp=sharing)
+    - Instructions for running the script for aligning the laser can be found [here](https://docs.google.com/document/d/1BRN5fjz8DTYgcB3r8oJ438RY_BqFJK8Sj2__ErfupG4/edit?usp=sharing)
 
 FILES & WHERE THEY LIVE
 -----------------------
@@ -31,6 +31,7 @@ FILES & WHERE THEY LIVE
 2. PDM computer
     - `psychopy_viz.py`
     - `align_laser.py`
+    - `preset_patterns.npy` (change path to this file in `psychoviz_viz.py`)
 3. `bias` computer
     - `send_frame.py` (checking crop)
     - `generate_frames.py` (detection)
@@ -47,5 +48,14 @@ IP_ADDRESS & PORT NUMBERS
 LOGGING
 -------
 
-[//]: # (what things are being saved and where should they be looked for)
-[//]: # (changing the names of the loggers to match the animal-id experiments)
+**MAKE SURE TO CHANGE THE NAMES OF THE LOGGERS IN EACH ACTOR TO BE THE `ANIMAL_ID` AND `DATE` PREFIX (i.e., `rb50_20260127`)**
+
+1. Behavior Detection 
+    - Will output a dataframe with (trial number, frame number | NOT DETECTED, frame | None) 
+    - Saved to `/behavior/`
+2. Timing 
+    - Each actor will log the amount of time it takes to send/receive frames  
+    - Saved to `/latency/`
+3. Pattern Logger
+    - Saves the trial number and pattern 
+        - There is an existing file with the pattern order already saved, but just want to have this to double-check post-experiment
