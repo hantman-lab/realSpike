@@ -1,16 +1,15 @@
-Notes and instructions
-======================
+Notes & Instructions
+====================
 
 
-1. Detail what each file does and what system it should live on
-2. How to run each thing 
+Details for running real-time lift detection and stimulation two-photon holography :D
 
 
 
 PRE-EXPERIMENT TODOs
 --------------------
 1. Check crop 
-    - First a "test" video needs to recorded (the animal does not have to be in the rig)
+    - First a "test" video needs to be recorded (the animal does not have to be in the rig)
     - **Both the bias computer and improv computer need to be on the netgear switch**
         - Make sure to update the `ip_address` field in both scripts and check that they have matching port numbers 
     - `send_frame.py` should be placed on the same computer as bias
