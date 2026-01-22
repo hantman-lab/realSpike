@@ -38,8 +38,11 @@ FILES & WHERE THEY LIVE
 IP_ADDRESS & PORT NUMBERS
 -------------------------
 
-[//]: # (insert a table src [machine and file], dst [machine and file], ip_address, port_number) 
-
+| MACHINE1 | SRC                    | MACHINE2 | DST                     | IP ADDRESS      | PORT NUMBER | DESCRIPTION                    |
+|----------|------------------------|----------|-------------------------|-----------------|-------------|--------------------------------|
+| improv   | cue.py                 | improv   | actors/cue_detector.py  | "localhost"     | 5552        | cue signal from usb to improv  |
+| improv   | actors/cue_detector.py | PDM      | psychopy.py             | "192.168.0.100" | 4146        | cue signal from improv to PDM  |
+| bias     | generate_frames.py     | improv   | actors/frame_grabber.py | "192.168.0.102" | 4147        | send frame from bias to improv |
 
 LOGGING
 -------

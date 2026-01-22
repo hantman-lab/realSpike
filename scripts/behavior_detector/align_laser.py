@@ -45,7 +45,7 @@ stim.draw()
 win.flip()
 
 print("turning on laser")
-ser = serial.Serial("/dev/ttyACM0", 115200, timeout=5)
+ser = serial.Serial("COM3", 115200)
 ser.write(b"STIM 13 4 0 3000000 10000 1\n")
 
 event.waitKeys()
