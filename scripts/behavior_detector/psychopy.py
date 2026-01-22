@@ -91,6 +91,7 @@ def monitor_socket(monitor):
 
 if __name__ == "__main__":
     # connect to port to listen on
+    # TODO: change to netgear ip_address and make sure port number matches
     address = "localhost"
     port = 5559
 

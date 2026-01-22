@@ -47,3 +47,5 @@ if __name__ == "__main__":
     path = os.path.join(parent_dir, f"bias-network-test_{timestamp}.pkl")
 
     df.to_pickle(path)
+
+    socket.close()

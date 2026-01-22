@@ -81,7 +81,7 @@ while True:
 
         # Send as raw bytes
         print("sending frame")
-        socket.send(data)
+        socket.send(data.tobytes())
 
         # reset frame
         current_frame = None
