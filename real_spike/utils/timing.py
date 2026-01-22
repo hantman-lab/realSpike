@@ -3,7 +3,7 @@ import numpy as np
 from datetime import datetime
 
 EXPERIMENT_COLUMNS = ["trial number", "frame number", "time"]
-BEHAVIOR_COLUMNS = ["trial number", "frame number"]
+BEHAVIOR_COLUMNS = ["trial number", "frame number", "frame"]
 
 
 class TimingLogger:
@@ -73,18 +73,11 @@ class BehaviorLogger:
 
         self.df = pd.DataFrame(data=None, columns=BEHAVIOR_COLUMNS)
 
-    def log(
-        self,
-        trial_number: int,
-        frame_number: int | str,
-    ):
+    def log(self, trial_number: int, frame_number: int | str, frame: np.ndarray | None):
         """Add a behavior detection to the dataframe"""
 
         # save the recorded pattern/fiber position sent and the time sent
-        self.df.loc[len(self.df.index)] = [
-            int(trial_number),
-            frame_number,
-        ]
+        self.df.loc[len(self.df.index)] = [int(trial_number), frame_number, [frame]]
 
     def save(self):
         """Save the dataframe to disk."""

@@ -2,7 +2,7 @@ import zmq
 import time
 
 address = "localhost"
-port_number = 5559
+port_number = 5552
 
 context = zmq.Context()
 socket = context.socket(zmq.PUB)

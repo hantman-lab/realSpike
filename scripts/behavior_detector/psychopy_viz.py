@@ -92,8 +92,9 @@ def monitor_socket(monitor):
 if __name__ == "__main__":
     # connect to port to listen on
     # TODO: change to netgear ip_address and make sure port number matches
+    address = "192.168.0.100"
     address = "localhost"
-    port = 5559
+    port = 4146
 
     context = zmq.Context()
     socket = context.socket(zmq.SUB)

@@ -39,10 +39,10 @@ class CueGenerator(ZmqActor):
 
         self.improv_logger.info(f"Connected socket to address {address} on port {port}")
 
-        # TODO: open zmq to PDM to send cue for pattern refresh
-        # TODO: change to current address
+        # TODO: change to netgear address of this computer
+        address = "192.168.0.100"
         address = "localhost"
-        port_number = 5553
+        port_number = 4146
 
         context = zmq.Context()
         self.PMD_socket = context.socket(zmq.PUB)
@@ -63,7 +63,6 @@ class CueGenerator(ZmqActor):
     def run_step(self):
         t = time.perf_counter_ns()
         # try to receive something from cue script
-        buff = None
         try:
             buff = self.cue_socket.recv(zmq.NOBLOCK)
         except zmq.Again:
@@ -87,6 +86,8 @@ class CueGenerator(ZmqActor):
                 self.trial_num += 1
             except Exception as e:
                 self.improv_logger.error(f"Generator Exception: {e}")
+        else:
+            return
 
         t2 = time.perf_counter_ns()
         self.latency.add(self.trial_num, self.frame_num, t2 - t)

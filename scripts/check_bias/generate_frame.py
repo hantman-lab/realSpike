@@ -9,7 +9,7 @@ import cv2
 VIDEO_DIR = "/home/clewis/repos/holo-nbs/data/videos/test/side/"
 
 ip_address = "localhost"
-port = 5555
+port = 4147
 
 context = zmq.Context()
 socket = context.socket(zmq.REP)

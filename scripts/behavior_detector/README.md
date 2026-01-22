@@ -25,11 +25,15 @@ PRE-EXPERIMENT TODOs
 
 FILES & WHERE THEY LIVE
 -----------------------
-1. `cue.py`
-2. `psychopy.py`
-3. `align_laser.py`
-4. `check_crop.py`
-5. `send_frame.py` 
+1. `improv` computer
+    - `cue.py`
+    - `check_crop.py`
+2. PDM computer
+    - `psychopy_viz.py`
+    - `align_laser.py`
+3. `bias` computer
+    - `send_frame.py` (checking crop)
+    - `generate_frames.py` (detection)
 
 IP_ADDRESS & PORT NUMBERS
 -------------------------
