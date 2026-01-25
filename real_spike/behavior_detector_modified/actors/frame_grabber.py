@@ -34,9 +34,9 @@ class CameraGenerator(ZmqActor):
         self.fetch_counter = 0
 
         # open REQ/REP socket to bias computer over netgear switch
-        ip_address = "192.168.0.102"
-        ip_address = "localhost"
-        port = 4147
+        ip_address = "192.168.0.103"
+        # ip_address = "localhost"
+        port = 4148
 
         context = zmq.Context()
         self.socket = context.socket(zmq.REQ)
@@ -90,6 +90,7 @@ class CameraGenerator(ZmqActor):
             return
         else:
             # fetch a frame
+            self.improv_logger.info("FETCHING FRAME")
             self.socket.send_string("fetch()")
             # get reply
             data = self.socket.recv()

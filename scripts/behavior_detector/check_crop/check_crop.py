@@ -11,7 +11,7 @@ DEFAULT_CROP = [136, 155, 207, 220]
 RESHAPE_SIZE = (290, 448)
 
 # TODO: update with netgear ip_address
-ip_address = "localhost"
+ip_address = "192.168.0.103"
 port = 5555
 
 context = zmq.Context()

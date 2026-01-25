@@ -34,6 +34,7 @@ FILES & WHERE THEY LIVE
 3. `bias` computer
     - `send_frame.py` (checking crop)
     - `generate_frames.py` (detection)
+    - `make_avi.py` (for post-experiment)
 
 IP_ADDRESS & PORT NUMBERS
 -------------------------
@@ -42,7 +43,7 @@ IP_ADDRESS & PORT NUMBERS
 |----------|------------------------|----------|-------------------------|-----------------|-------------|--------------------------------|
 | improv   | cue.py                 | improv   | actors/cue_detector.py  | "localhost"     | 5552        | cue signal from usb to improv  |
 | improv   | actors/cue_detector.py | PDM      | psychopy.py             | "192.168.0.100" | 4146        | cue signal from improv to PDM  |
-| bias     | generate_frames.py     | improv   | actors/frame_grabber.py | "192.168.0.102" | 4147        | send frame from bias to improv |
+| bias     | generate_frames.py     | improv   | actors/frame_grabber.py | "192.168.0.103" | 4147        | send frame from bias to improv |
 
 LOGGING
 -------
@@ -58,3 +59,9 @@ LOGGING
 3. Pattern Logger
     - Saves the trial number and pattern 
         - There is an existing file with the pattern order already saved, but just want to have this to double-check post-experiment
+
+
+POST EXPERIMENT TODOs
+---------------------
+1. Making the `.avi` files out of the `jpeg` images
+    - blah blah blag

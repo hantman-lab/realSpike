@@ -32,16 +32,17 @@ class LiftDetector(ZmqActor):
         self.trial_num = 0
         self.reshape_size = (290, 448)
         self.crop = [136, 155, 207, 220]
+        self.crop = [170, 189, 207, 220]
         self.behavior_logger = BehaviorLogger("test-logger")
 
         # serial port to send out laser signal
-        # self.ser = serial.Serial("/dev/ttyACM0", 115200)
+        self.ser = serial.Serial("/dev/ttyACM0", 115200)
 
         self.improv_logger.info("Completed setup for behavior detector")
 
     def stop(self):
         self.improv_logger.info("Lift detector stopping")
-        # self.ser.close()
+        self.ser.close()
         self.latency.save()
         self.behavior_logger.save()
         return 0
@@ -91,7 +92,7 @@ class LiftDetector(ZmqActor):
             if (frame != 0).sum() >= 180:
                 self.improv_logger.info(f"LIFT DETECTED: frame {self.frame_num}")
                 self.improv_logger.info("SENDING LASER SIGNAL")
-                # self._trigger_laser()
+                self._trigger_laser()
                 # output detection
                 self.behavior_logger.log(self.trial_num, self.frame_num, self.frame)
                 LIFT_DETECTED = True

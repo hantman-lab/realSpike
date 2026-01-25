@@ -4,7 +4,7 @@ import zmq
 import cv2
 
 # TODO: copy and paste path to desired image here
-PATH = "/home/clewis/repos/holo-nbs/data/videos/test/side/v001/image_615.jpg"
+PATH = "/Reagan/test/side/rb_20260123_side_v001/image_615.jpg"
 
 # TODO: update with netgear ip_address
 ip_address = "localhost"

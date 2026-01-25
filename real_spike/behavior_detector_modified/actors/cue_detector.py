@@ -41,7 +41,7 @@ class CueGenerator(ZmqActor):
 
         # TODO: change to netgear address of this computer
         address = "192.168.0.100"
-        address = "localhost"
+        # address = "localhost"
         port_number = 4146
 
         context = zmq.Context()
