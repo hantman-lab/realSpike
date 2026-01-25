@@ -1,12 +1,13 @@
+"""File to put on Pattern Display Monitor (PDM) that will receive cue from improv and refresh screen ahead of detection."""
+
 from psychopy import visual, core, event
 import datetime
 import pandas as pd
 import numpy as np
-import os
+from pathlib import Path
 import zmq
 import zmq.utils.monitor as m
 import threading
-from pathlib import Path
 
 COLUMN_NAMES = ["trial number"]
 
@@ -90,8 +91,10 @@ def monitor_socket(monitor):
 
 if __name__ == "__main__":
     # connect to port to listen on
+    # TODO: change to netgear ip_address and make sure port number matches
+    address = "192.168.0.100"
     address = "localhost"
-    port = 5559
+    port = 4146
 
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
@@ -108,7 +111,7 @@ if __name__ == "__main__":
     win = visual.Window(
         size=[1280, 1280],
         screen=0,
-        fullscr=False,  # TODO: will need to flip this to True during actual experiments
+        fullscr=True,  # TODO: will need to flip this to True during actual experiments
         color="black",
         units="pix",
         checkTiming=False,
@@ -140,7 +143,7 @@ if __name__ == "__main__":
                 image=img,
                 size=(2 * px_per_cell, 2 * px_per_cell),
                 units="pix",
-                interpolate=False,  # VERY IMPORTANT
+                interpolate=False,
             )
             # need to put the stim in the top right corner for flip by DMD
             win_width, win_height = win.size

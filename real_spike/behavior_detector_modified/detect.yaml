@@ -1,6 +1,6 @@
 actors:
   CueGenerator:
-    package: actors.cue_detector_sglx
+    package: actors.cue_detector
     class: CueGenerator
 
   CameraGenerator:
@@ -17,11 +17,11 @@ connections:
       - CueGenerator.q_out
     sinks:
       - CameraGenerator.q_in
-#  Generator-Detector:
-#    sources:
-#      - CameraGenerator.q_out
-#    sinks:
-#      - LiftDetector.q_in
+  Generator-Detector:
+    sources:
+      - CameraGenerator.q_out
+    sinks:
+      - LiftDetector.q_in
 
 settings:
   store_size: 5_000_000_000

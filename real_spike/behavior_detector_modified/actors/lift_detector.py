@@ -29,16 +29,20 @@ class LiftDetector(ZmqActor):
         return f"Name: {self.name}, Data: {self.frame}"
 
     def setup(self):
+        self.trial_num = 0
         self.reshape_size = (290, 448)
         self.crop = [136, 155, 207, 220]
+        self.crop = [170, 189, 207, 220]
         self.behavior_logger = BehaviorLogger("test-logger")
 
-        self.ser = serial.Serial("/dev/ttyACM0", 115200, timeout=5)
+        # serial port to send out laser signal
+        self.ser = serial.Serial("/dev/ttyACM0", 115200)
 
         self.improv_logger.info("Completed setup for behavior detector")
 
     def stop(self):
         self.improv_logger.info("Lift detector stopping")
+        self.ser.close()
         self.latency.save()
         self.behavior_logger.save()
         return 0
@@ -61,38 +65,38 @@ class LiftDetector(ZmqActor):
             t = time.perf_counter_ns()
             data = np.frombuffer(self.client.client.get(data_id), np.uint32)
             self.frame_num = int(data[-1])
-            self.trial_num = int(data[-2])
-            self.frame = data[:-2].reshape(*self.reshape_size)
+            self.frame = data[:-1].reshape(*self.reshape_size)
 
             # will never see a lift before the pellet actually comes forward
-            if self.frame_num <= 550:
+            if self.frame_num <= 600:
                 return
 
-            if self.frame_num == 850:
+            if self.frame_num == 852:
                 if not LIFT_DETECTED:
-                    self.behavior_logger.log(self.trial_num, "LIFT NOT DETECTED")
-                    self.improv_logger.info("LIFT NOT DETECTED")
+                    self.behavior_logger.log(self.trial_num, "LIFT NOT DETECTED", None)
+                    self.improv_logger.info(
+                        f"TRIAL {self.trial_num}, FRAME {self.frame_num}, LIFT NOT DETECTED"
+                    )
                 LIFT_DETECTED = False
+                self.trial_num += 1
+                self.frame_num = -1
                 return
 
+            # lift already detected for this trial
             if LIFT_DETECTED:
-                # lift already detected for this trial
                 return
 
             # y-dim comes first (height, width)
-            self.frame = self.frame[
-                self.crop[2] : self.crop[3], self.crop[0] : self.crop[1]
-            ]
+            frame = self.frame[self.crop[2] : self.crop[3], self.crop[0] : self.crop[1]]
 
-            if (self.frame != 0).sum() >= 180:
-                LIFT_DETECTED = True
+            if (frame != 0).sum() >= 180:
                 self.improv_logger.info(f"LIFT DETECTED: frame {self.frame_num}")
-                # output detection
-                self.behavior_logger.log(self.trial_num, self.frame_num)
-
-            if LIFT_DETECTED:
                 self.improv_logger.info("SENDING LASER SIGNAL")
                 self._trigger_laser()
+                # output detection
+                self.behavior_logger.log(self.trial_num, self.frame_num, self.frame)
+                LIFT_DETECTED = True
+                self.trial_num += 1
 
             t2 = time.perf_counter_ns()
             self.latency.add(self.trial_num, self.frame_num, t2 - t)
