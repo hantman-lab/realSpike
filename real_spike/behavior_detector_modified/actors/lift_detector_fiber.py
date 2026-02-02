@@ -63,10 +63,10 @@ class LiftDetector(ZmqActor):
             self.improv_logger.info("LASER SIGNAL SENT")
             self.ser.flush()
             # sleep for 12 seconds and then stim again w/ no behavior
+            time.sleep(12)
             self.ser.write(cmd)
             self.improv_logger.info("NON-BEHAVIOR LASER SIGNAL SENT")
             self.ser.flush()
-            time.sleep(12)
         else:
             self.improv_logger.info("CONTROL TRIAL, NO LASER SIGNAL SENT")
 
