@@ -1,9 +1,9 @@
+import pandas as pd
 from improv.actor import ZmqActor
 import logging
 import time
 import serial
 import numpy as np
-import pandas as pd
 
 from real_spike.utils import BehaviorLogger, LatencyLogger
 
@@ -40,7 +40,7 @@ class LiftDetector(ZmqActor):
         self.ser = serial.Serial("/dev/ttyACM0", 115200)
 
         self.experiment_conditions = pd.read_pickle(
-            "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_patterns.npy"
+            "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_fiber.pkl"
         )
 
         self.improv_logger.info("Completed setup for behavior detector")
@@ -56,14 +56,17 @@ class LiftDetector(ZmqActor):
         r = self.experiment_conditions.loc[
             self.experiment_conditions["trial_num"] == self.trial_num
         ]
-        pattern = r["pattern"].iat[0]
-        if pattern.any():
-            self.ser.write(b"STIM 13 4 0 5000 10000 1\n")
+        condition = r["condition_num"].iat[0]
+        cmd = r["command"].iat[0].encode()
+        if condition > 0:
+            self.ser.write(cmd)
             self.improv_logger.info("LASER SIGNAL SENT")
             self.ser.flush()
-            time.sleep(12)
-            self.ser.write(b"STIM 13 4 0 5000 10000 1\n")
+            # sleep for 12 seconds and then stim again w/ no behavior
+            self.ser.write(cmd)
             self.improv_logger.info("NON-BEHAVIOR LASER SIGNAL SENT")
+            self.ser.flush()
+            time.sleep(12)
         else:
             self.improv_logger.info("CONTROL TRIAL, NO LASER SIGNAL SENT")
 
