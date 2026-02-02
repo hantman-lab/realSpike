@@ -15,7 +15,7 @@ df = pd.DataFrame(columns=["request_num", "RTT"])
 
 # TODO: update these with netgear stuff
 ip_address = "localhost"
-port = 5555
+port = 4147
 
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
@@ -25,6 +25,7 @@ print(f"Connected to ZMQ server at {ip_address} on port {port}")
 
 if __name__ == "__main__":
     for i in tqdm(range(8_00)):
+        time.sleep(0.0015)
         t = time.perf_counter_ns()
         print("requesting frame")
         socket.send_string("fetch()")

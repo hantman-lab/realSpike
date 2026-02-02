@@ -2,13 +2,12 @@
 
 from psychopy import visual, core, event
 import numpy as np
-import serial
 
 # open a blank screen
 win = visual.Window(
     size=[1280, 1280],
     screen=0,
-    fullscr=True,  # TODO: will need to flip this to True during actual experiments
+    fullscr=True,
     color="black",
     units="pix",
     checkTiming=False,
@@ -43,10 +42,6 @@ stim.pos = (
 print("showing full field pattern")
 stim.draw()
 win.flip()
-
-print("turning on laser")
-ser = serial.Serial("COM3", 115200)
-ser.write(b"STIM 13 4 0 3000000 10000 1\n")
 
 event.waitKeys()
 win.close()

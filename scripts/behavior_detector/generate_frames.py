@@ -5,6 +5,7 @@ import glob
 import numpy as np
 import zmq
 import cv2
+import time
 
 # TODO: replace with path on bias computer
 VIDEO_DIR = "/home/clewis/repos/holo-nbs/data/videos/test/side/"
@@ -47,6 +48,15 @@ def get_latest_frame(folder):
     )
 
 
+def retry_frame_grab(path, max_wait=0.006, sleep_time=0.0005):
+    deadline = time.perf_counter() + max_wait
+    img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    while img is None and time.perf_counter() < deadline:
+        time.sleep(sleep_time)
+        img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    return img
+
+
 "-----------------------------------------------------------------------------------------------------"
 
 while True:
@@ -63,6 +73,11 @@ while True:
 
     # convert to gray scale
     img = cv2.imread(current_frame, cv2.IMREAD_GRAYSCALE)
+
+    # sometimes the most recent frame is one that is still being written
+    # just want to buffer for a second and try to get it again
+    if img is None:
+        retry_frame_grab(current_frame)
 
     data = np.append(img.ravel(), trial_num).astype(np.uint32)
 
