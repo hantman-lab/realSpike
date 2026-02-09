@@ -1,9 +1,9 @@
+import pandas as pd
 from improv.actor import ZmqActor
 import logging
 import time
 import serial
 import numpy as np
-import pandas as pd
 
 from real_spike.utils import BehaviorLogger, LatencyLogger
 
@@ -15,38 +15,33 @@ LIFT_DETECTED = False
 
 class LiftDetector(ZmqActor):
     def __init__(self, *args, **kwargs):
-        """Actor responsible for detecting lifts using a fixed bounding box."""
+        """Detects lift and sends out appropriate laser signal for doing fiber experiments."""
         super().__init__(*args, **kwargs)
         self.frame = None
         self.name = "LiftDetector"
         self.latency = LatencyLogger(
-            name="lift_detector",
+            name="lift_detector_fiber",
             max_size=50_000,
         )
 
     def __str__(self):
-        """Returns the name of the actor and the most recent frame."""
+        """Returns the name and most recent data."""
         return f"Name: {self.name}, Data: {self.frame}"
 
     def setup(self):
-        """
-        Sets up the actor.
-
-        Defines the bounding box region, sets up serial port to the NIDAQ for turning the laser on,
-        initializes a behavior logger.
-        """
+        """Sets up the actor."""
         self.trial_num = 0
         self.frame_num = None
         self.reshape_size = (290, 448)
         self.crop = [136, 155, 207, 220]
         self.crop = [170, 189, 207, 220]
-        self.behavior_logger = BehaviorLogger("test-logger-holography")
+        self.behavior_logger = BehaviorLogger("test-logger-fiber")
 
         # serial port to send out laser signal
         self.ser = serial.Serial("/dev/ttyACM0", 115200)
 
-        self.experiment_conditions = np.load(
-            "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_patterns.npy"
+        self.experiment_conditions = pd.read_pickle(
+            "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_fiber.pkl"
         )
 
         self.improv_logger.info("Completed setup for behavior detector")
@@ -54,36 +49,34 @@ class LiftDetector(ZmqActor):
     def stop(self):
         """Stops the actor and cleans up resources."""
         self.improv_logger.info("Lift detector stopping")
-        self.behavior_logger.save()
         self.ser.close()
         self.latency.save()
+        self.behavior_logger.save()
         return 0
 
     def _trigger_laser(self):
-        """Triggers the laser, writing out the appropriate command."""
-        # get the current pattern
-        pattern = self.experiment_conditions[self.trial_num]
-
-        # if the trial is not a control trial, trigger the laser once during the behavior and once after
-        if pattern.any():
-            self.ser.write(b"STIM 13 4 0 5000 10000 1\n")
+        """Triggers the laser with the appropriate command."""
+        # get the current condition
+        r = self.experiment_conditions.loc[
+            self.experiment_conditions["trial_num"] == self.trial_num
+        ]
+        condition = r["condition_num"].iat[0]
+        cmd = r["command"].iat[0].encode()
+        # check to see if it is control trials or not
+        if condition > 0:
+            self.ser.write(cmd)
             self.improv_logger.info("LASER SIGNAL SENT")
             self.ser.flush()
+            # sleep for 12 seconds and then stim again w/ no behavior
             time.sleep(12)
-            self.ser.write(b"STIM 13 4 0 5000 10000 1\n")
+            self.ser.write(cmd)
             self.improv_logger.info("NON-BEHAVIOR LASER SIGNAL SENT")
             self.ser.flush()
         else:
             self.improv_logger.info("CONTROL TRIAL, NO LASER SIGNALS SENT")
 
     def run_step(self):
-        """
-        Runs a single step of the actor.
-
-        Unpacks the frame and frame number, crops the frame to the region defined by bounding box,
-        and tries to detect lift.
-        If lift is detected, will trigger the laser.
-        """
+        """Runs one step of the lift detector."""
         global LIFT_DETECTED
         data_id = None
 

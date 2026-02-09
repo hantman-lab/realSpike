@@ -3,7 +3,6 @@ import logging
 import time
 import uuid
 import os
-import numpy as np
 import zmq
 
 from real_spike.utils import LatencyLogger
@@ -16,6 +15,7 @@ CUE_DETECTED = False
 
 class CameraGenerator(ZmqActor):
     def __init__(self, *args, **kwargs):
+        """Grabs the most recent frame off of the bias computer."""
         super().__init__(*args, **kwargs)
         self.frame = None
         self.name = "CameraGenerator"
@@ -25,9 +25,11 @@ class CameraGenerator(ZmqActor):
         )
 
     def __str__(self):
+        """Returns the actor name and the most recent data."""
         return f"Name: {self.name}, Data: {self.frame}"
 
     def setup(self):
+        """Sets up the actor. Makes a ZMQ connection to the bias computer for making frame requests."""
         # every time we get a new cue, want to increment trial number
         self.trial_num = -1
         self.frame_num = 0
@@ -45,20 +47,18 @@ class CameraGenerator(ZmqActor):
         self.improv_logger.info("Completed setup for Camera Generator")
 
     def stop(self):
+        """Stops the actor and cleans up resources."""
         self.improv_logger.info("Camera generator stopping")
         self.latency.save()
         self.socket.close()
         return 0
 
-    def fetch(self):
-        # request a frame
-        self.socket.send_string("fetch()")
-        # get reply
-        data = self.socket.recv()
-
-        return data
-
     def run_step(self):
+        """
+        Run a single step of the actor.
+
+        When cue signal is received, fetches 118 frames off the camera to try detecting lift on.
+        """
         global CUE_DETECTED
         t = time.perf_counter()
 
@@ -71,6 +71,7 @@ class CameraGenerator(ZmqActor):
             except Exception as e:
                 pass
 
+            # did get a cue
             if data_id is not None:
                 self.trial_num += 1
                 self.improv_logger.info(
