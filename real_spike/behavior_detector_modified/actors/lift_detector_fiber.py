@@ -15,26 +15,27 @@ LIFT_DETECTED = False
 
 class LiftDetector(ZmqActor):
     def __init__(self, *args, **kwargs):
+        """Detects lift and sends out appropriate laser signal for doing fiber experiments."""
         super().__init__(*args, **kwargs)
         self.frame = None
         self.name = "LiftDetector"
-        # start the video from queue
-        self.frame_num = None
-        self.trial_num = None
         self.latency = LatencyLogger(
-            name="lift_detector",
+            name="lift_detector_fiber",
             max_size=50_000,
         )
 
     def __str__(self):
+        """Returns the name and most recent data."""
         return f"Name: {self.name}, Data: {self.frame}"
 
     def setup(self):
+        """Sets up the actor."""
         self.trial_num = 0
+        self.frame_num = None
         self.reshape_size = (290, 448)
         self.crop = [136, 155, 207, 220]
         self.crop = [170, 189, 207, 220]
-        self.behavior_logger = BehaviorLogger("test-logger")
+        self.behavior_logger = BehaviorLogger("test-logger-fiber")
 
         # serial port to send out laser signal
         self.ser = serial.Serial("/dev/ttyACM0", 115200)
@@ -46,6 +47,7 @@ class LiftDetector(ZmqActor):
         self.improv_logger.info("Completed setup for behavior detector")
 
     def stop(self):
+        """Stops the actor and cleans up resources."""
         self.improv_logger.info("Lift detector stopping")
         self.ser.close()
         self.latency.save()
@@ -53,11 +55,14 @@ class LiftDetector(ZmqActor):
         return 0
 
     def _trigger_laser(self):
+        """Triggers the laser with the appropriate command."""
+        # get the current condition
         r = self.experiment_conditions.loc[
             self.experiment_conditions["trial_num"] == self.trial_num
         ]
         condition = r["condition_num"].iat[0]
         cmd = r["command"].iat[0].encode()
+        # check to see if it is control trials or not
         if condition > 0:
             self.ser.write(cmd)
             self.improv_logger.info("LASER SIGNAL SENT")
@@ -68,9 +73,10 @@ class LiftDetector(ZmqActor):
             self.improv_logger.info("NON-BEHAVIOR LASER SIGNAL SENT")
             self.ser.flush()
         else:
-            self.improv_logger.info("CONTROL TRIAL, NO LASER SIGNAL SENT")
+            self.improv_logger.info("CONTROL TRIAL, NO LASER SIGNALS SENT")
 
     def run_step(self):
+        """Runs one step of the lift detector."""
         global LIFT_DETECTED
         data_id = None
 
