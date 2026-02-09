@@ -6,7 +6,6 @@ import os
 import uuid
 
 from real_spike.utils import LatencyLogger
-from scripts.check_bias.generate_frame import trial_num
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

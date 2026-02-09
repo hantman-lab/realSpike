@@ -3,7 +3,6 @@ import logging
 import time
 import uuid
 import os
-import numpy as np
 import zmq
 
 from real_spike.utils import LatencyLogger

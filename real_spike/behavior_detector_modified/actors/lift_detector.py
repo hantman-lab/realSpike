@@ -45,7 +45,7 @@ class LiftDetector(ZmqActor):
         # serial port to send out laser signal
         self.ser = serial.Serial("/dev/ttyACM0", 115200)
 
-        self.experiment_conditions = pd.read_pickle(
+        self.experiment_conditions = np.load(
             "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_patterns.npy"
         )
 
@@ -62,10 +62,7 @@ class LiftDetector(ZmqActor):
     def _trigger_laser(self):
         """Triggers the laser, writing out the appropriate command."""
         # get the current pattern
-        r = self.experiment_conditions.loc[
-            self.experiment_conditions["trial_num"] == self.trial_num
-        ]
-        pattern = r["pattern"].iat[0]
+        pattern = self.experiment_conditions[self.trial_num]
 
         # if the trial is not a control trial, trigger the laser once during the behavior and once after
         if pattern.any():
