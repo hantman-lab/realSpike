@@ -39,11 +39,13 @@ FILES & WHERE THEY LIVE
 IP_ADDRESS & PORT NUMBERS
 -------------------------
 
-| MACHINE1 | SRC                    | MACHINE2 | DST                     | IP ADDRESS      | PORT NUMBER | DESCRIPTION                    |
-|----------|------------------------|----------|-------------------------|-----------------|-------------|--------------------------------|
-| improv   | cue.py                 | improv   | actors/cue_detector.py  | "localhost"     | 5552        | cue signal from usb to improv  |
-| improv   | actors/cue_detector.py | PDM      | psychopy.py             | "192.168.0.100" | 4146        | cue signal from improv to PDM  |
-| bias     | generate_frames.py     | improv   | actors/frame_grabber.py | "192.168.0.103" | 4147        | send frame from bias to improv |
+| MACHINE1 | SRC                     | MACHINE2 | DST                     | IP ADDRESS      | PORT NUMBER | DESCRIPTION                           |
+|----------|-------------------------|----------|-------------------------|-----------------|-------------|---------------------------------------|
+| improv   | cue.py                  | improv   | actors/cue_detector.py  | "localhost"     | 5552        | cue signal from usb to improv         |
+| improv   | actors/cue_detector.py  | PDM      | psychopy.py             | "192.168.0.100" | 4146        | cue signal from improv to PDM         |
+| bias     | generate_frames.py      | improv   | actors/frame_grabber.py | "192.168.0.103" | 4147        | send frame from bias to improv        |
+| improv   | actors/lift_detector.py | improv   | actors/frame_grabber.py | "localhost"     | 4143        | stop signal from detect to frame grab |
+ 
 
 LOGGING
 -------
@@ -59,9 +61,3 @@ LOGGING
 3. Pattern Logger
     - Saves the trial number and pattern 
         - There is an existing file with the pattern order already saved, but just want to have this to double-check post-experiment
-
-
-POST EXPERIMENT TODOs
----------------------
-1. Making the `.avi` files out of the `jpeg` images
-    - blah blah blag
