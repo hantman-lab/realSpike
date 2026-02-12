@@ -10,7 +10,7 @@ from real_spike.utils import LatencyLogger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-EXPERIMENT_TYPE = "bah"
+EXPERIMENT_TYPE = "holography"
 
 
 class CueGenerator(ZmqActor):
