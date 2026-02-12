@@ -109,6 +109,7 @@ class CueGenerator(ZmqActor):
 
             self.client.client.set(data_id, self.trial_num, nx=False)
             try:
+                self.improv_logger.info(f"   ")
                 self.improv_logger.info(f"CUE DETECTED, TRIAL: {self.trial_num}")
                 # send to frame grabber
                 self.q_out.put(data_id)
