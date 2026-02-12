@@ -43,7 +43,7 @@ IP_ADDRESS & PORT NUMBERS
 |----------|-------------------------|----------|-------------------------|-----------------|-------------|---------------------------------------|
 | improv   | cue.py                  | improv   | actors/cue_detector.py  | "localhost"     | 5552        | cue signal from usb to improv         |
 | improv   | actors/cue_detector.py  | PDM      | psychopy.py             | "192.168.0.100" | 4146        | cue signal from improv to PDM         |
-| bias     | generate_frames.py      | improv   | actors/frame_grabber.py | "192.168.0.103" | 4147        | send frame from bias to improv        |
+| bias     | generate_frames.py      | improv   | actors/frame_grabber.py | "192.168.0.103" | 4148        | send frame from bias to improv        |
 | improv   | actors/lift_detector.py | improv   | actors/frame_grabber.py | "localhost"     | 4143        | stop signal from detect to frame grab |
  
 

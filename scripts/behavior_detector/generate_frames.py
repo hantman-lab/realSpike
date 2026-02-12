@@ -8,12 +8,12 @@ import cv2
 import time
 
 # TODO: replace with path on bias computer
-VIDEO_DIR = "/home/clewis/repos/holo-nbs/data/videos/test/side/"
+VIDEO_DIR = "D:/Reagan/test/side/"
 
 # TODO: replace with netgear ip address
-ip_address = "192.168.0.102"
-ip_address = "localhost"
-port = 4147
+ip_address = "192.168.0.103"
+# ip_address = "localhost"
+port = 4148
 
 context = zmq.Context()
 socket = context.socket(zmq.REP)
@@ -48,10 +48,9 @@ def get_latest_frame(folder):
     )
 
 
-def retry_frame_grab(path, max_wait=0.006, sleep_time=0.0005):
-    deadline = time.perf_counter() + max_wait
+def retry_frame_grab(path, sleep_time=0.001):
     img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    while img is None and time.perf_counter() < deadline:
+    while img is None:
         time.sleep(sleep_time)
         img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
     return img
@@ -69,7 +68,7 @@ while True:
     current_frame = get_latest_frame(current_folder)
 
     # get the trial num to send with the grayscale image
-    trial_num = int(current_frame.split("/")[-1].split(".")[0].split("_")[-1])
+    frame_num = int(current_frame.split("/")[-1].split(".")[0].split("_")[-1])
 
     # convert to gray scale
     img = cv2.imread(current_frame, cv2.IMREAD_GRAYSCALE)
@@ -79,6 +78,11 @@ while True:
     if img is None:
         retry_frame_grab(current_frame)
 
-    data = np.append(img.ravel(), trial_num).astype(np.uint32)
+    # if still image is none just skip
+    if img is None:
+        print(f"IMAGE IS STILL NONE, frame {frame_num}")
+        img = np.zeros((290, 448))
+
+    data = np.append(img.ravel(), frame_num).astype(np.uint32)
 
     socket.send(data.tobytes())
