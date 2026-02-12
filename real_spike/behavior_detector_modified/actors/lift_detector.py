@@ -1,9 +1,10 @@
 from improv.actor import ZmqActor
 import logging
 import time
-import serial
 import numpy as np
 import zmq
+import os
+import uuid
 
 from real_spike.utils import BehaviorLogger, LatencyLogger
 
@@ -18,13 +19,15 @@ class LiftDetector(ZmqActor):
         self.frame = None
         self.name = "LiftDetector"
         self.LIFT_DETECTED = False
+        self.DETECTED_TIME = None
+        self.SENT_STOP = False
 
         # define loggers
         self.latency = LatencyLogger(
             name="lift_detector",
             max_size=50_000,
         )
-        self.behavior_logger = BehaviorLogger("test-logger-holography")
+        self.behavior_logger = BehaviorLogger("test-logger")
 
     def __str__(self):
         """Returns the name of the actor and the most recent frame."""
@@ -44,15 +47,6 @@ class LiftDetector(ZmqActor):
 
         # TODO: update with the desired crop
         self.crop = [136, 155, 207, 220]
-        self.crop = [170, 189, 207, 220]
-
-        # serial port to send out laser signal
-        self.ser = serial.Serial("/dev/ttyACM0", 115200)
-
-        # load the experiment conditions
-        self.experiment_conditions = np.load(
-            "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_patterns.npy"
-        )
 
         # connect to frame grabber to send stop signal
         ip_address = "localhost"
@@ -68,27 +62,9 @@ class LiftDetector(ZmqActor):
         """Stops the actor and cleans up resources."""
         self.improv_logger.info("Lift detector stopping")
         self.behavior_logger.save()
-        self.ser.close()
         self.socket.close()
         self.latency.save()
         return 0
-
-    def _trigger_laser(self):
-        """Triggers the laser, writing out the appropriate command."""
-        # get the current pattern
-        pattern = self.experiment_conditions[self.trial_num]
-
-        # if the trial is not a control trial, trigger the laser once during the behavior and once after
-        if pattern.any():
-            self.ser.write(b"STIM 13 4 0 5000 10000 1\n")
-            self.improv_logger.info("LASER SIGNAL SENT")
-            self.ser.flush()
-            time.sleep(10)
-            self.ser.write(b"STIM 13 4 0 5000 10000 1\n")
-            self.improv_logger.info("NON-BEHAVIOR LASER SIGNAL SENT")
-            self.ser.flush()
-        else:
-            self.improv_logger.info("CONTROL TRIAL, NO LASER SIGNALS SENT")
 
     def run_step(self):
         """
@@ -96,7 +72,7 @@ class LiftDetector(ZmqActor):
 
         Unpacks the frame and frame number, crops the frame to the region defined by bounding box,
         and tries to detect lift.
-        If lift is detected, will trigger the laser.
+        If lift is detected, will send signal to LaserTrigger actor to trigger the laser.
         """
         data_id = None
 
@@ -114,41 +90,53 @@ class LiftDetector(ZmqActor):
 
             if not self.frame.any():
                 self.improv_logger.info(f"BLANK FRAME, {self.frame_num}")
-
-            # will never see a lift before the pellet actually comes forward
-            if self.frame_num <= 600:
                 return
 
+            # in the event that we do not detect lift
             if self.frame_num >= 900:
-                if not self.LIFT_DETECTED:
+                if not self.SENT_STOP:
                     self.behavior_logger.log(self.trial_num, "LIFT NOT DETECTED", None)
                     self.improv_logger.info(
                         f"TRIAL {self.trial_num}, FRAME {self.frame_num}, LIFT NOT DETECTED"
                     )
-                self.LIFT_DETECTED = False
-                self.trial_num += 1
-                self.frame_num = -1
+                    self.socket.send_string("1")
+                    self.SENT_STOP = True
+                    self.LIFT_DETECTED = False
+                    self.trial_num += 1
+                    self.frame_num = -1
+                    return
+                self.improv_logger.info("DISCARDING EXTRA FRAME")
                 return
 
             # lift already detected for this trial
             if self.LIFT_DETECTED:
-                self.improv_logger.info(
-                    f"LIFT ALREADY DETECTED, TRIAL {self.trial_num}"
-                )
-                return
+                # need to discard frames
+                if time.perf_counter_ns() < (self.DETECTED_TIME + 5 * 1e9):
+                    self.improv_logger.info(
+                        f"LIFT ALREADY DETECTED, TRIAL {self.trial_num}, FRAME {self.frame_num}, DISCARDING EXTRA FRAME"
+                    )
+                    return
+                # otherwise new trial has started
+                self.LIFT_DETECTED = False
+                self.DETECTED_TIME = None
+                self.trial_num += 1
 
             # y-dim comes first (height, width)
             frame = self.frame[self.crop[2] : self.crop[3], self.crop[0] : self.crop[1]]
 
             if (frame != 0).sum() >= 180:
                 self.improv_logger.info(f"LIFT DETECTED: frame {self.frame_num}")
+                # send signal to trigger laser
+                self.q_out.put(str(os.getpid()) + str(uuid.uuid4()))
+
                 # tell frame grabber to stop grabbing
                 self.socket.send_string("1")
-                self._trigger_laser()
+
                 # output detection
                 self.behavior_logger.log(self.trial_num, self.frame_num, self.frame)
                 self.LIFT_DETECTED = True
-                self.trial_num += 1
+                self.DETECTED_TIME = time.perf_counter_ns()
+                self.SENT_STOP = False
 
             t2 = time.perf_counter_ns()
             self.latency.add(self.trial_num, self.frame_num, t2 - t)

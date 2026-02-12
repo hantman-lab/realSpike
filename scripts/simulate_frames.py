@@ -12,7 +12,7 @@ frame_index = 501
 
 
 ip_address = "localhost"
-port = 4147
+port = 4148
 
 context = zmq.Context()
 socket = context.socket(zmq.REP)
@@ -24,7 +24,7 @@ while True:
     # Wait for client request
     message = socket.recv_string()
 
-    if frame_index > 852:
+    if frame_index > 900:
         folder_index += 1
         if folder_index >= len(all_folders):
             print("done")
