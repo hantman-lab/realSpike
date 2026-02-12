@@ -11,11 +11,12 @@ print(f"Opened socket on {address}:{port_number}")
 
 CUE_NUM = 0
 
+time.sleep(2)
 
-for _ in range(140):
-    time.sleep(4)
+for _ in range(40):
     print("Sending cue")
     socket.send_string(f"CUE_{CUE_NUM}")
-
+    # intertrial interval
+    time.sleep(17)
 
 print("done")

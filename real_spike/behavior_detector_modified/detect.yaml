@@ -11,6 +11,10 @@ actors:
     package: actors.lift_detector
     class: LiftDetector
 
+  LaserTrigger:
+    package: actors.laser_trigger
+    class: LaserTrigger
+
 connections:
   Cue-Camera:
     sources:
@@ -22,6 +26,11 @@ connections:
       - CameraGenerator.q_out
     sinks:
       - LiftDetector.q_in
+  Detector-Trigger:
+    sources:
+      - LiftDetector.q_out
+    sinks:
+      - LaserTrigger.q_in
 
 settings:
   store_size: 5_000_000_000

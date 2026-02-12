@@ -114,7 +114,7 @@ class CameraGenerator(ZmqActor):
             self.q_out.put(data_id)
             t2 = time.perf_counter_ns()
             self.latency.add(self.trial_num, self.frame_num, t2 - t)
-            self.client.client.expire(data_id, 5)
+            self.client.client.expire(data_id, 25)
             self.frame_num += 1
         except Exception as e:
             self.improv_logger.error(f"FrameGrabber Exception: {e}")
