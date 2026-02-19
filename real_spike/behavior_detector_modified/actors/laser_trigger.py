@@ -1,6 +1,5 @@
 from improv.actor import ZmqActor
 import logging
-import time
 import serial
 import numpy as np
 import pandas as pd
@@ -32,7 +31,7 @@ class LaserTrigger(ZmqActor):
         self.trial_num = -1
 
         # serial port to send out laser signal
-        # self.ser = serial.Serial("/dev/ttyACM0", 115200)
+        self.ser = serial.Serial("/dev/ttyACM0", 115200)
 
         # load the experiment conditions
         if EXPERIMENT_TYPE == "holography":
@@ -59,7 +58,7 @@ class LaserTrigger(ZmqActor):
         self.improv_logger.info("Laser trigger stopping")
         self.laser_socket.close()
         # clean up resources
-        # self.ser.close()
+        self.ser.close()
         return 0
 
     # TODO: delete this method when done
@@ -126,12 +125,12 @@ class LaserTrigger(ZmqActor):
         # trigger the laser
         if data_id is not None:
             self.trial_num = int(self.client.client.get(data_id))
-            self._fake_trigger()
+            # self._fake_trigger()
 
-            # if EXPERIMENT_TYPE == "holography":
-            #     self._trigger_laser_holography()
-            # else:
-            #     self._trigger_laser_fiber()
+            if EXPERIMENT_TYPE == "holography":
+                self._trigger_laser_holography()
+            else:
+                self._trigger_laser_fiber()
             return
 
         try:
@@ -142,9 +141,9 @@ class LaserTrigger(ZmqActor):
         # stop grabbing frames
         if buff is not None:
             self.trial_num = int(buff)
-            self._fake_trigger()
+            # self._fake_trigger()
 
-            # if EXPERIMENT_TYPE == "holography":
-            #     self._trigger_laser_holography()
-            # else:
-            #     self._trigger_laser_fiber()
+            if EXPERIMENT_TYPE == "holography":
+                self._trigger_laser_holography()
+            else:
+                self._trigger_laser_fiber()

@@ -10,7 +10,7 @@ from real_spike.utils import LatencyLogger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-EXPERIMENT_TYPE = "test"
+EXPERIMENT_TYPE = "holography"
 
 NUM_TRIALS = 300
 

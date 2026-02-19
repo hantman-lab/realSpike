@@ -36,7 +36,7 @@ class CameraGenerator(ZmqActor):
 
         # open REQ/REP socket to bias computer over netgear switch
         ip_address = "192.168.0.103"
-        ip_address = "localhost"
+        # ip_address = "localhost"
         port = 4148
 
         context = zmq.Context()
