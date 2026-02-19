@@ -46,8 +46,7 @@ class CameraGenerator(ZmqActor):
         # open PUB/SUB socket with lift detector actor to get back when lift detected
         ip_address = "localhost"
         port = 4143
-        context2 = zmq.Context()
-        self.stop_socket = context2.socket(zmq.SUB)
+        self.stop_socket = context.socket(zmq.SUB)
         self.stop_socket.setsockopt(zmq.SUBSCRIBE, b"")
         self.stop_socket.connect(f"tcp://{ip_address}:{port}")
 

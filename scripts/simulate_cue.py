@@ -17,6 +17,6 @@ for _ in range(40):
     print("Sending cue")
     socket.send_string(f"CUE_{CUE_NUM}")
     # intertrial interval
-    time.sleep(10)
+    time.sleep(5)
 
 print("done")

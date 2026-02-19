@@ -102,7 +102,7 @@ class LiftDetector(ZmqActor):
                     self.socket.send_string("1")
                     self.SENT_STOP = True
                     self.LIFT_DETECTED = False
-                    self.trial_num += 1
+                    self.trial_num += 2
                     self.frame_num = -1
                     return
                 self.improv_logger.info("DISCARDING EXTRA FRAME")
@@ -119,7 +119,7 @@ class LiftDetector(ZmqActor):
                 # otherwise new trial has started
                 self.LIFT_DETECTED = False
                 self.DETECTED_TIME = None
-                self.trial_num += 1
+                self.trial_num += 2
 
             # y-dim comes first (height, width)
             frame = self.frame[self.crop[2] : self.crop[3], self.crop[0] : self.crop[1]]
@@ -127,7 +127,9 @@ class LiftDetector(ZmqActor):
             if (frame != 0).sum() >= 180:
                 self.improv_logger.info(f"LIFT DETECTED: frame {self.frame_num}")
                 # send signal to trigger laser
-                self.q_out.put(str(os.getpid()) + str(uuid.uuid4()))
+                p_id = str(os.getpid()) + str(uuid.uuid4())
+                self.client.client.set(p_id, self.trial_num, nx=False)
+                self.q_out.put(p_id)
 
                 # tell frame grabber to stop grabbing
                 self.socket.send_string("1")

@@ -59,7 +59,7 @@ class LaserTrigger(ZmqActor):
         self.improv_logger.info("Laser trigger stopping")
         self.laser_socket.close()
         # clean up resources
-        #self.ser.close()
+        # self.ser.close()
         return 0
 
     # TODO: delete this method when done
@@ -92,22 +92,22 @@ class LaserTrigger(ZmqActor):
             self.improv_logger.info("CONTROL TRIAL, NO LASER SIGNAL SENT")
 
     def _trigger_laser_fiber(self):
-            # get the current condition
-            r = self.experiment_conditions.loc[
-                self.experiment_conditions["trial_num"] == self.trial_num
-            ]
-            condition = r["condition_num"].iat[0]
-            cmd = r["command"].iat[0].encode()
-            # check to see if it is control trials or not
-            if condition > 0:
-                self.ser.write(cmd)
-                if self.trial_num % 2 == 0:
-                    self.improv_logger.info("LASER SIGNAL SENT")
-                else:
-                    self.improv_logger.info("NON-BEHAVIOR LASER SIGNAL SENT")
-                self.ser.flush()
+        # get the current condition
+        r = self.experiment_conditions.loc[
+            self.experiment_conditions["trial_num"] == self.trial_num
+        ]
+        condition = r["condition_num"].iat[0]
+        cmd = r["command"].iat[0].encode()
+        # check to see if it is control trials or not
+        if condition > 0:
+            self.ser.write(cmd)
+            if self.trial_num % 2 == 0:
+                self.improv_logger.info("LASER SIGNAL SENT")
             else:
-                self.improv_logger.info("CONTROL TRIAL, NO LASER SIGNAL SENT")
+                self.improv_logger.info("NON-BEHAVIOR LASER SIGNAL SENT")
+            self.ser.flush()
+        else:
+            self.improv_logger.info("CONTROL TRIAL, NO LASER SIGNAL SENT")
 
     def run_step(self):
         """
@@ -115,36 +115,36 @@ class LaserTrigger(ZmqActor):
 
         Triggers the laser.
         """
-        if self.trial_num % 2 == 1:
-            data_id = None
+        data_id = None
 
-            try:
-                # get data_id from queue in
-                data_id = self.q_in.get(timeout=0.05)
-            except Exception as e:
-                pass
+        try:
+            # get data_id from queue in
+            data_id = self.q_in.get(timeout=0.05)
+        except Exception as e:
+            pass
 
-            # trigger the laser
-            if data_id is not None:
-                self.trial_num += 1
-                self._fake_trigger()
+        # trigger the laser
+        if data_id is not None:
+            self.trial_num = int(self.client.client.get(data_id))
+            self._fake_trigger()
 
-                # if EXPERIMENT_TYPE == "holography":
-                #     self._trigger_laser_holography()
-                # else:
-                #     self._trigger_laser_fiber()
-        else:
-            try:
-                buff = self.laser_socket.recv(zmq.NOBLOCK)
-            except zmq.Again:
-                buff = None
+            # if EXPERIMENT_TYPE == "holography":
+            #     self._trigger_laser_holography()
+            # else:
+            #     self._trigger_laser_fiber()
+            return
 
-            # stop grabbing frames
-            if buff is not None:
-                self.trial_num += 1
-                self._fake_trigger()
+        try:
+            buff = self.laser_socket.recv_string(zmq.NOBLOCK)
+        except zmq.Again:
+            buff = None
 
-                # if EXPERIMENT_TYPE == "holography":
-                #     self._trigger_laser_holography()
-                # else:
-                #     self._trigger_laser_fiber()
+        # stop grabbing frames
+        if buff is not None:
+            self.trial_num = int(buff)
+            self._fake_trigger()
+
+            # if EXPERIMENT_TYPE == "holography":
+            #     self._trigger_laser_holography()
+            # else:
+            #     self._trigger_laser_fiber()

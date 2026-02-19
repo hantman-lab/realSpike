@@ -62,14 +62,12 @@ class CueGenerator(ZmqActor):
             # address = "localhost"
             port_number = 4146
 
-            context = zmq.Context()
             self.PMD_socket = context.socket(zmq.PUB)
             self.PMD_socket.bind(f"tcp://{address}:{port_number}")
 
         # open PUB/SUB socket to laser trigger for odd trials that will have no behavior
         ip_address = "localhost"
         port = 5553
-        context = zmq.Context()
         self.laser_socket = context.socket(zmq.PUB)
         self.laser_socket.bind(f"tcp://{ip_address}:{port}")
 
@@ -123,8 +121,10 @@ class CueGenerator(ZmqActor):
                 self.improv_logger.info(f"CUE DETECTED, TRIAL: {self.trial_num}")
 
                 if self.trial_num % 2 == 1:
-                    self.laser_socket.send_string("1")
-                    self.improv_logger.info("ODD TRIAL, NO BEHAVIOR DETECTION WILL BE DONE")
+                    self.laser_socket.send_string(f"{self.trial_num}")
+                    self.improv_logger.info(
+                        "ODD TRIAL, NO BEHAVIOR DETECTION WILL BE DONE"
+                    )
                 else:
                     # send to frame grabber
                     self.q_out.put(data_id)
