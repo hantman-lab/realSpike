@@ -10,7 +10,9 @@ from real_spike.utils import LatencyLogger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-EXPERIMENT_TYPE = "holography"
+EXPERIMENT_TYPE = "test"
+
+NUM_TRIALS = 300
 
 
 class CueGenerator(ZmqActor):
@@ -64,6 +66,13 @@ class CueGenerator(ZmqActor):
             self.PMD_socket = context.socket(zmq.PUB)
             self.PMD_socket.bind(f"tcp://{address}:{port_number}")
 
+        # open PUB/SUB socket to laser trigger for odd trials that will have no behavior
+        ip_address = "localhost"
+        port = 5553
+        context = zmq.Context()
+        self.laser_socket = context.socket(zmq.PUB)
+        self.laser_socket.bind(f"tcp://{ip_address}:{port}")
+
         self.improv_logger.info("Completed setup for CueGenerator")
 
     def stop(self):
@@ -77,6 +86,7 @@ class CueGenerator(ZmqActor):
 
         # clean up resources
         self.cue_socket.close()
+        self.laser_socket.close()
 
         if EXPERIMENT_TYPE == "holography":
             self.PMD_socket.close()
@@ -99,7 +109,7 @@ class CueGenerator(ZmqActor):
             buff = None
 
         # stop at end of trials so we don't get out of bounds errors
-        if self.trial_num >= 150:
+        if self.trial_num >= NUM_TRIALS:
             return
 
         # cue received
@@ -111,8 +121,13 @@ class CueGenerator(ZmqActor):
             try:
                 self.improv_logger.info("   ")
                 self.improv_logger.info(f"CUE DETECTED, TRIAL: {self.trial_num}")
-                # send to frame grabber
-                self.q_out.put(data_id)
+
+                if self.trial_num % 2 == 1:
+                    self.laser_socket.send_string("1")
+                    self.improv_logger.info("ODD TRIAL, NO BEHAVIOR DETECTION WILL BE DONE")
+                else:
+                    # send to frame grabber
+                    self.q_out.put(data_id)
                 # only need to update a display if doing holography
                 if EXPERIMENT_TYPE == "holography":
                     # send to PMD

@@ -29,14 +29,14 @@ class CameraGenerator(ZmqActor):
     def setup(self):
         """Sets up the actor. Makes a ZMQ connection to the bias computer for making frame requests."""
         # every time we get a new cue, want to increment trial number
-        self.trial_num = -1
+        self.trial_num = -2
         self.frame_num = 0
 
         self.CUE_DETECTED = False
 
         # open REQ/REP socket to bias computer over netgear switch
         ip_address = "192.168.0.103"
-        # ip_address = "localhost"
+        ip_address = "localhost"
         port = 4148
 
         context = zmq.Context()
@@ -80,7 +80,7 @@ class CameraGenerator(ZmqActor):
 
             # did get a cue
             if data_id is not None:
-                self.trial_num += 1
+                self.trial_num += 2
                 self.improv_logger.info(
                     f"RECEIVED CUE TRIAL {self.trial_num}, START FETCHING FRAMES"
                 )
