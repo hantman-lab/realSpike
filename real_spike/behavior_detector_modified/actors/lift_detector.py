@@ -48,7 +48,7 @@ class LiftDetector(ZmqActor):
         # TODO: update with the desired crop
         self.crop = [136, 155, 207, 220]
         #   self.crop = [165, 184, 208, 221]
-        #self.crop = [182, 201, 208, 221]
+        # self.crop = [182, 201, 208, 221]
         self.crop = [157, 177, 199, 212]
 
         # connect to frame grabber to send stop signal
