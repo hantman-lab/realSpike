@@ -47,6 +47,8 @@ class LiftDetector(ZmqActor):
 
         # TODO: update with the desired crop
         self.crop = [136, 155, 207, 220]
+        #   self.crop = [165, 184, 208, 221]
+        self.crop = [182, 201, 208, 221]
 
         # connect to frame grabber to send stop signal
         ip_address = "localhost"
@@ -90,7 +92,6 @@ class LiftDetector(ZmqActor):
 
             if not self.frame.any():
                 self.improv_logger.info(f"BLANK FRAME, {self.frame_num}")
-                return
 
             # in the event that we do not detect lift
             if self.frame_num >= 900:
@@ -122,7 +123,11 @@ class LiftDetector(ZmqActor):
                 self.trial_num += 2
 
             # y-dim comes first (height, width)
-            frame = self.frame[self.crop[2] : self.crop[3], self.crop[0] : self.crop[1]]
+            frame = self.frame[
+                self.crop[2] : self.crop[3], self.crop[0] : self.crop[1]
+            ].copy()
+            # need to set background pixels to 0
+            frame[frame < 11] = 0
 
             if (frame != 0).sum() >= 180:
                 self.improv_logger.info(f"LIFT DETECTED: frame {self.frame_num}")
