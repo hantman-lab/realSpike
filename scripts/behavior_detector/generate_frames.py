@@ -10,9 +10,7 @@ import time
 # TODO: replace with path on bias computer
 VIDEO_DIR = "D:/Reagan/test/side/"
 
-# TODO: replace with netgear ip address
 ip_address = "192.168.0.103"
-# ip_address = "localhost"
 port = 4148
 
 context = zmq.Context()
@@ -39,20 +37,28 @@ def get_latest_folder(base_dir):
     return latest
 
 
-def get_latest_frame(folder):
-    """Get the most recent frame from the given folder (most recent frame in trial)."""
+def get_latest_frames(folder, n=3):
+    """Get the n most recent frames from the given folder."""
     files = glob.glob(os.path.join(folder, "*.jpg"))
-    return max(
+
+    # Sort files by frame number (descending)
+    sorted_files = sorted(
         files,
         key=lambda f: int(os.path.splitext(os.path.basename(f))[0].split("_")[-1]),
+        reverse=True,
     )
 
+    # Return the top n files
+    return sorted_files[:n]
 
-def retry_frame_grab(path, sleep_time=0.001):
-    img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-    while img is None:
-        time.sleep(sleep_time)
+
+def retry_frame_grab(paths):
+    """Attempts to take the last 3 frames and return one of them that has completed writing to disk."""
+    img = None
+    for path in paths:
         img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        if img is not None:
+            break
     return img
 
 
@@ -65,7 +71,8 @@ while True:
     # get the latest folder
     current_folder = get_latest_folder(VIDEO_DIR)
     # get the most recent frame
-    current_frame = get_latest_frame(current_folder)
+    most_recent_frames = get_latest_frames(current_folder)
+    current_frame = most_recent_frames[0]
 
     # get the trial num to send with the grayscale image
     frame_num = int(current_frame.split("/")[-1].split(".")[0].split("_")[-1])
@@ -76,7 +83,7 @@ while True:
     # sometimes the most recent frame is one that is still being written
     # just want to buffer for a second and try to get it again
     if img is None:
-        retry_frame_grab(current_frame)
+        retry_frame_grab(most_recent_frames)
 
     # if still image is none just skip
     if img is None:

@@ -13,7 +13,7 @@ CUE_NUM = 0
 
 time.sleep(2)
 
-for _ in range(40):
+for _ in range(299):
     print("Sending cue")
     socket.send_string(f"CUE_{CUE_NUM}")
     # intertrial interval
