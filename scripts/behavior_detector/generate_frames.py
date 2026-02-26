@@ -10,9 +10,7 @@ import time
 # TODO: replace with path on bias computer
 VIDEO_DIR = "D:/Reagan/test/side/"
 
-# TODO: replace with netgear ip address
 ip_address = "192.168.0.103"
-# ip_address = "localhost"
 port = 4148
 
 context = zmq.Context()
