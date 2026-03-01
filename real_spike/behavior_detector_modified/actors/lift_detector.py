@@ -111,6 +111,8 @@ class LiftDetector(ZmqActor):
                     self.frame_num = -1
                     return
                 self.improv_logger.info(f"DISCARDING EXTRA FRAME, {self.frame_num}")
+                self.socket.send_string("1")
+                self.frame_num = -1
                 return
 
             # lift already detected for this trial
@@ -124,6 +126,7 @@ class LiftDetector(ZmqActor):
                 # otherwise new trial has started
                 self.LIFT_DETECTED = False
                 self.DETECTED_TIME = None
+                self.SENT_STOP = False
                 self.trial_num += 2
 
             # y-dim comes first (height, width)
@@ -133,6 +136,7 @@ class LiftDetector(ZmqActor):
             # need to set background pixels to 0
             frame[frame < 11] = 0
 
+            # check number of non-zero pixels
             if (frame != 0).sum() >= 180:
                 self.improv_logger.info(f"LIFT DETECTED: frame {self.frame_num}")
                 # send signal to trigger laser
