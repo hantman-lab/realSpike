@@ -18,9 +18,7 @@ class LiftDetector(ZmqActor):
         super().__init__(*args, **kwargs)
         self.frame = None
         self.name = "LiftDetector"
-        self.LIFT_DETECTED = False
-        self.DETECTED_TIME = None
-        self.SENT_STOP = False
+        self.trial_actions = set()
 
         # define loggers
         self.latency = LatencyLogger(
@@ -40,7 +38,6 @@ class LiftDetector(ZmqActor):
         Defines the bounding box region, sets up serial port to the NIDAQ for turning the laser on,
         initializes a behavior logger.
         """
-        self.trial_num = 0
         self.frame_num = None
 
         self.reshape_size = (290, 448)
@@ -88,46 +85,34 @@ class LiftDetector(ZmqActor):
         if data_id is not None:
             t = time.perf_counter_ns()
             data = np.frombuffer(self.client.client.get(data_id), np.uint32)
+            self.trial_num = int(data[-2])
             self.frame_num = int(data[-1])
-            self.frame = data[:-1].reshape(*self.reshape_size)
+            self.frame = data[:-2].reshape(*self.reshape_size)
 
-            if self.frame_num < 600 and self.frame_num != -1:
+            # action already taken
+            if self.trial_num in self.trial_actions:
+                self.improv_logger.info(
+                    f"ACTION ALREADY TAKEN FOR TRIAL {self.trial_num}"
+                )
+                return
+
+            if self.frame_num < 600:
                 return
 
             if not self.frame.any():
-                self.improv_logger.info(f"BLANK FRAME, {self.frame_num}")
+                self.improv_logger.info(
+                    f"BLANK FRAME, {self.trial_num}, {self.frame_num}"
+                )
 
             # in the event that we do not detect lift
             if self.frame_num >= 900:
-                if not self.SENT_STOP:
-                    self.behavior_logger.log(self.trial_num, "LIFT NOT DETECTED", None)
-                    self.improv_logger.info(
-                        f"TRIAL {self.trial_num}, FRAME {self.frame_num}, LIFT NOT DETECTED"
-                    )
-                    self.socket.send_string("1")
-                    self.SENT_STOP = True
-                    self.LIFT_DETECTED = False
-                    self.trial_num += 2
-                    self.frame_num = -1
-                    return
-                self.improv_logger.info(f"DISCARDING EXTRA FRAME, {self.frame_num}")
+                self.behavior_logger.log(self.trial_num, "LIFT NOT DETECTED", None)
+                self.improv_logger.info(
+                    f"TRIAL {self.trial_num}, FRAME {self.frame_num}, LIFT NOT DETECTED"
+                )
                 self.socket.send_string("1")
-                self.frame_num = -1
+                self.trial_actions.add(self.trial_num)
                 return
-
-            # lift already detected for this trial
-            if self.LIFT_DETECTED:
-                # need to discard frames
-                if time.perf_counter_ns() < (self.DETECTED_TIME + 5 * 1e9):
-                    self.improv_logger.info(
-                        f"LIFT ALREADY DETECTED, TRIAL {self.trial_num}, FRAME {self.frame_num}, DISCARDING EXTRA FRAME"
-                    )
-                    return
-                # otherwise new trial has started
-                self.LIFT_DETECTED = False
-                self.DETECTED_TIME = None
-                self.SENT_STOP = False
-                self.trial_num += 2
 
             # y-dim comes first (height, width)
             frame = self.frame[
@@ -138,7 +123,9 @@ class LiftDetector(ZmqActor):
 
             # check number of non-zero pixels
             if (frame != 0).sum() >= 180:
-                self.improv_logger.info(f"LIFT DETECTED: frame {self.frame_num}")
+                self.improv_logger.info(
+                    f"LIFT DETECTED: TRIAL {self.trial_num}, FRAME {self.frame_num}"
+                )
                 # send signal to trigger laser
                 p_id = str(os.getpid()) + str(uuid.uuid4())
                 self.client.client.set(p_id, self.trial_num, nx=False)
@@ -149,9 +136,7 @@ class LiftDetector(ZmqActor):
 
                 # output detection
                 self.behavior_logger.log(self.trial_num, self.frame_num, self.frame)
-                self.LIFT_DETECTED = True
-                self.DETECTED_TIME = time.perf_counter_ns()
-                self.SENT_STOP = False
+                self.trial_actions.add(self.trial_num)
 
             t2 = time.perf_counter_ns()
             self.latency.add(self.trial_num, self.frame_num, t2 - t)
