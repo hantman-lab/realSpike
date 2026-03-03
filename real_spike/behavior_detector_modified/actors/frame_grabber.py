@@ -4,6 +4,7 @@ import time
 import uuid
 import os
 import zmq
+import numpy as np
 
 from real_spike.utils import LatencyLogger
 
@@ -36,7 +37,7 @@ class CameraGenerator(ZmqActor):
 
         # open REQ/REP socket to bias computer over netgear switch
         ip_address = "192.168.0.103"
-        # ip_address = "localhost"
+        ip_address = "localhost"
         port = 4148
 
         context = zmq.Context()
@@ -104,7 +105,15 @@ class CameraGenerator(ZmqActor):
         # fetch a frame
         self.socket.send_string("fetch()")
         # get reply
-        data = self.socket.recv()
+        # data = self.socket.recv()
+
+        header = self.socket.recv_json()
+        msg = self.socket.recv(copy=False)  # zmq.Frame
+        buf = msg.buffer  # memoryview
+
+        dtype = np.dtype(header["dtype"])
+        img = np.frombuffer(buf, dtype=dtype)
+        data = np.append(img, [header["trial_num"], header["frame_num"]])
 
         data_id = str(os.getpid()) + str(uuid.uuid4())
 

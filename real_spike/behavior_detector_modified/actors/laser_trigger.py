@@ -8,7 +8,7 @@ import zmq
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-EXPERIMENT_TYPE = "holography"
+EXPERIMENT_TYPE = "fiber"
 
 
 class LaserTrigger(ZmqActor):
