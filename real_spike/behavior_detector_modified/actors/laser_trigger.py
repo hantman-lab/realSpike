@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 EXPERIMENT_TYPE = "fiber"
+DELAY = 5
 
 
 class LaserTrigger(ZmqActor):
@@ -39,9 +40,14 @@ class LaserTrigger(ZmqActor):
                 "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_patterns.npy"
             )
         else:
-            self.experiment_conditions = pd.read_pickle(
-                "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_fiber.pkl"
-            )
+            if DELAY == 20:
+                self.experiment_conditions = pd.read_pickle(
+                    "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_fiber.pkl"
+                )
+            else:
+                self.experiment_conditions = pd.read_pickle(
+                    "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_fiber_5ms.pkl"
+                )
 
         # open SUB socket for odd trials to get laser signal right after cue
         ip_address = "localhost"
