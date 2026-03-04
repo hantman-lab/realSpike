@@ -10,6 +10,7 @@ logger.setLevel(logging.INFO)
 
 EXPERIMENT_TYPE = "fiber"
 DELAY = 5
+STIM_ONLY = True
 
 
 class LaserTrigger(ZmqActor):
@@ -36,17 +37,22 @@ class LaserTrigger(ZmqActor):
 
         # load the experiment conditions
         if EXPERIMENT_TYPE == "holography":
-            self.experiment_conditions = np.load(
-                "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_patterns.npy"
-            )
-        else:
+            if not STIM_ONLY:  # behavior/non-behavior patterns
+                self.experiment_conditions = np.load(
+                    "/home/clewis/repos/realSpike/scripts/behavior_detector/data/preset_patterns.npy"
+                )
+            else:  # stim only combo patterns
+                self.experiment_conditions = np.load(
+                    "/home/clewis/repos/realSpike/scripts/behavior_detector/data/preset_patterns_combo.npy"
+                )
+        else:  # delay between A and B is 20ms
             if DELAY == 20:
                 self.experiment_conditions = pd.read_pickle(
-                    "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_fiber.pkl"
+                    "/home/clewis/repos/realSpike/scripts/behavior_detector/data/preset_fiber.pkl"
                 )
-            else:
+            else:  # delay between A and B is 5ms
                 self.experiment_conditions = pd.read_pickle(
-                    "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_fiber_5ms.pkl"
+                    "/home/clewis/repos/realSpike/scripts/behavior_detector/data/preset_fiber_5ms.pkl"
                 )
 
         # open SUB socket for odd trials to get laser signal right after cue
@@ -96,6 +102,11 @@ class LaserTrigger(ZmqActor):
         else:
             self.improv_logger.info("CONTROL TRIAL, NO LASER SIGNAL SENT")
 
+    def _trigger_stim_only(self):
+        self.ser.write(b"STIM 13 4 0 5000 10000 1\n")
+        self.improv_logger.info("LASER SIGNAL SENT")
+        self.ser.flush()
+
     def _trigger_laser_fiber(self):
         # get the current condition
         r = self.experiment_conditions.loc[
@@ -134,7 +145,10 @@ class LaserTrigger(ZmqActor):
             # self._fake_trigger()
 
             if EXPERIMENT_TYPE == "holography":
-                self._trigger_laser_holography()
+                if not STIM_ONLY:
+                    self._trigger_laser_holography()
+                else:
+                    self._trigger_stim_only()
             else:
                 self._trigger_laser_fiber()
             return
@@ -150,6 +164,9 @@ class LaserTrigger(ZmqActor):
             # self._fake_trigger()
 
             if EXPERIMENT_TYPE == "holography":
-                self._trigger_laser_holography()
+                if not STIM_ONLY:
+                    self._trigger_laser_holography()
+                else:
+                    self._trigger_stim_only()
             else:
                 self._trigger_laser_fiber()
