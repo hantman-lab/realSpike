@@ -12,7 +12,7 @@ logger.setLevel(logging.INFO)
 
 EXPERIMENT_TYPE = "fiber"
 
-NUM_TRIALS = 300
+NUM_TRIALS = 192
 
 
 class CueGenerator(ZmqActor):
