@@ -4,11 +4,14 @@ import serial
 import numpy as np
 import pandas as pd
 import zmq
+import time
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-EXPERIMENT_TYPE = "holography"
+EXPERIMENT_TYPE = "fiber"
+DELAY = 5
+LONG_STIM = False
 
 
 class LaserTrigger(ZmqActor):
@@ -36,12 +39,21 @@ class LaserTrigger(ZmqActor):
         # load the experiment conditions
         if EXPERIMENT_TYPE == "holography":
             self.experiment_conditions = np.load(
-                "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_patterns.npy"
+                "/home/clewis/repos/realSpike/scripts/behavior_detector/data/preset_patterns.npy"
             )
-        else:
-            self.experiment_conditions = pd.read_pickle(
-                "/home/clewis/repos/realSpike/scripts/behavior_detector/preset_fiber.pkl"
-            )
+        else:  # delay between A and B is 20ms
+            if LONG_STIM:
+                self.experiment_conditions = pd.read_pickle(
+                    "/home/clewis/repos/realSpike/scripts/behavior_detector/data/preset_fiber_long.pkl"
+                )
+            elif DELAY == 20:
+                self.experiment_conditions = pd.read_pickle(
+                    "/home/clewis/repos/realSpike/scripts/behavior_detector/data/preset_fiber.pkl"
+                )
+            else:  # delay between A and B is 5ms
+                self.experiment_conditions = pd.read_pickle(
+                    "/home/clewis/repos/realSpike/scripts/behavior_detector/data/preset_fiber_5ms_dual_power.pkl"
+                )
 
         # open SUB socket for odd trials to get laser signal right after cue
         ip_address = "localhost"
@@ -108,6 +120,30 @@ class LaserTrigger(ZmqActor):
         else:
             self.improv_logger.info("CONTROL TRIAL, NO LASER SIGNAL SENT")
 
+    def _trigger_laser_fiber_long_stim(self):
+        # get the current condition
+        r = self.experiment_conditions.loc[
+            self.experiment_conditions["trial_num"] == self.trial_num
+        ]
+        condition = r["condition_num"].iat[0]
+        cmds = r["command"].iat[0]
+        if condition in [0, 1]:  # single pulse only with 5ms delay in between
+            self.ser.write(cmds.encode())
+            self.improv_logger.info("LASER SIGNAL 1 SENT, SINGLE PULSE")
+            time.sleep(0.005)
+            self.ser.write(cmds.encode())
+            self.improv_logger.info("LASER SIGNAL 2 SENT, SINGLE PULSE")
+        else:  # single pulse followed by longer pulse
+            self.ser.write(cmds[0].encode())
+            self.improv_logger.info("LASER SIGNAL 1 SENT, SINGLE PULSE")
+            time.sleep(0.005)
+            # 200 ms pulse at 40Hz = 8 pulses, 25ms in between pulse
+            for _ in range(8):
+                self.ser.write(cmds[1].encode())
+                time.sleep(0.025)
+            self.improv_logger.info("LASER SIGNAL 2 SENT, MULTI-PULSE")
+        self.ser.flush()
+
     def run_step(self):
         """
         Runs a single step of the actor.
@@ -130,7 +166,10 @@ class LaserTrigger(ZmqActor):
             if EXPERIMENT_TYPE == "holography":
                 self._trigger_laser_holography()
             else:
-                self._trigger_laser_fiber()
+                if LONG_STIM:
+                    self._trigger_laser_fiber_long_stim()
+                else:
+                    self._trigger_laser_fiber()
             return
 
         try:
@@ -146,4 +185,7 @@ class LaserTrigger(ZmqActor):
             if EXPERIMENT_TYPE == "holography":
                 self._trigger_laser_holography()
             else:
-                self._trigger_laser_fiber()
+                if LONG_STIM:
+                    self._trigger_laser_fiber_long_stim()
+                else:
+                    self._trigger_laser_fiber()

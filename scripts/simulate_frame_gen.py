@@ -8,9 +8,9 @@ from real_spike import LazyVideo
 import cv2
 
 VIDEOS = list(
-    Path("/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb69/20260224/").glob(
-        "*side*.avi"
-    )
+    Path(
+        "/home/clewis/wasabi/reaganbullins2/ProjectionProject/rb69/20260302/videos/"
+    ).glob("*side*.avi")
 )
 print(len(VIDEOS))
 
@@ -26,7 +26,7 @@ for item_name in os.listdir(OUTPUT_PATH):
 
 
 address = "localhost"
-port = 5552
+port = 5550
 
 context = zmq.Context()
 cue_socket = context.socket(zmq.SUB)
@@ -40,7 +40,7 @@ def generate_video(path):
         os.mkdir(out)
     print(out)
     vid = LazyVideo(path)
-    for j in range(501, 903, 3):
+    for j in range(0, 903, 3):
         d = vid[j]
         img_bgr = cv2.cvtColor(d, cv2.COLOR_RGB2BGR)
         cv2.imwrite(out.joinpath(f"image_{j}.jpg"), img_bgr)

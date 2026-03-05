@@ -1,3 +1,4 @@
+import cv2
 from improv.actor import ZmqActor
 import logging
 import time
@@ -25,7 +26,7 @@ class LiftDetector(ZmqActor):
             name="lift_detector",
             max_size=50_000,
         )
-        self.behavior_logger = BehaviorLogger("test-logger")
+        self.behavior_logger = BehaviorLogger("rb69-20260302-logger")
 
     def __str__(self):
         """Returns the name of the actor and the most recent frame."""
@@ -96,7 +97,7 @@ class LiftDetector(ZmqActor):
                 )
                 return
 
-            if self.frame_num < 600:
+            if self.frame_num < 550:
                 return
 
             if not self.frame.any():
@@ -115,14 +116,12 @@ class LiftDetector(ZmqActor):
                 return
 
             # y-dim comes first (height, width)
-            frame = self.frame[
-                self.crop[2] : self.crop[3], self.crop[0] : self.crop[1]
-            ].copy()
+            frame = self.frame[self.crop[2] : self.crop[3], self.crop[0] : self.crop[1]]
             # need to set background pixels to 0
-            frame[frame < 11] = 0
+            # frame[frame < 15] = 0
 
             # check number of non-zero pixels
-            if (frame != 0).sum() >= 180:
+            if (frame != 0).sum() >= 120:
                 self.improv_logger.info(
                     f"LIFT DETECTED: TRIAL {self.trial_num}, FRAME {self.frame_num}"
                 )
