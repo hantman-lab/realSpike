@@ -10,9 +10,9 @@ from real_spike.utils import LatencyLogger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-EXPERIMENT_TYPE = "fiber"
+EXPERIMENT_TYPE = "holography"
 
-NUM_TRIALS = 150
+NUM_TRIALS = 300
 
 
 class CueGenerator(ZmqActor):
@@ -64,12 +64,6 @@ class CueGenerator(ZmqActor):
             self.PMD_socket = context.socket(zmq.PUB)
             self.PMD_socket.bind(f"tcp://{address}:{port_number}")
 
-        # open PUB/SUB socket to laser trigger for odd trials that will have no behavior
-        ip_address = "localhost"
-        port = 5553
-        self.laser_socket = context.socket(zmq.PUB)
-        self.laser_socket.bind(f"tcp://{ip_address}:{port}")
-
         self.improv_logger.info("Completed setup for CueGenerator")
 
     def stop(self):
@@ -83,7 +77,6 @@ class CueGenerator(ZmqActor):
 
         # clean up resources
         self.cue_socket.close()
-        self.laser_socket.close()
 
         if EXPERIMENT_TYPE == "holography":
             self.PMD_socket.close()
@@ -118,23 +111,15 @@ class CueGenerator(ZmqActor):
             try:
                 self.improv_logger.info("   ")
                 self.improv_logger.info(f"CUE DETECTED, TRIAL: {self.trial_num}")
-
-                if self.trial_num % 2 == 1:
-                    self.laser_socket.send_string(f"{self.trial_num}")
-                    self.improv_logger.info(
-                        "ODD TRIAL, NO BEHAVIOR DETECTION WILL BE DONE"
-                    )
-                else:
-                    # send to frame grabber
-                    # self.q_out.put(data_id)
-                    # only need to update a display if doing holography
-                    if EXPERIMENT_TYPE == "holography":
+                # send to frame grabber regardless of trial because we need to save the video no matter what
+                self.q_out.put(data_id)
+                # only need to update a display if doing holography
+                if EXPERIMENT_TYPE == "holography":
+                    # only need to refresh holography on the even trials because odd trials are just a repeat
+                    if self.trial_num % 2 == 0:
                         # send to PMD
                         self.PMD_socket.send_string("1")
-
-                    time.sleep(0.1)
-                    self.laser_socket.send_string(f"{self.trial_num}")
-                    self.improv_logger.info("EVEN TRIAL, STIM AT 600ms")
+                        self.improv_logger.info("SENT PATTERN REFRESH SIGNAL")
                 t2 = time.perf_counter_ns()
                 self.latency.add(self.trial_num, self.frame_num, t2 - t)
                 self.client.client.expire(data_id, 5)
