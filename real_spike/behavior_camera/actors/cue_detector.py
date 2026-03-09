@@ -10,9 +10,9 @@ from real_spike.utils import LatencyLogger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-EXPERIMENT_TYPE = "holography"
+EXPERIMENT_TYPE = "fiber"
 
-NUM_TRIALS = 300
+NUM_TRIALS = 150
 
 
 class CueGenerator(ZmqActor):
@@ -59,7 +59,6 @@ class CueGenerator(ZmqActor):
         if EXPERIMENT_TYPE == "holography":
             # TODO: change to netgear address of this computer
             address = "192.168.0.100"
-            # address = "localhost"
             port_number = 4146
 
             self.PMD_socket = context.socket(zmq.PUB)
@@ -127,11 +126,15 @@ class CueGenerator(ZmqActor):
                     )
                 else:
                     # send to frame grabber
-                    self.q_out.put(data_id)
-                # only need to update a display if doing holography
-                if EXPERIMENT_TYPE == "holography":
-                    # send to PMD
-                    self.PMD_socket.send_string("1")
+                    # self.q_out.put(data_id)
+                    # only need to update a display if doing holography
+                    if EXPERIMENT_TYPE == "holography":
+                        # send to PMD
+                        self.PMD_socket.send_string("1")
+
+                    time.sleep(0.1)
+                    self.laser_socket.send_string(f"{self.trial_num}")
+                    self.improv_logger.info("EVEN TRIAL, STIM AT 600ms")
                 t2 = time.perf_counter_ns()
                 self.latency.add(self.trial_num, self.frame_num, t2 - t)
                 self.client.client.expire(data_id, 5)

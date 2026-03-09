@@ -89,7 +89,7 @@ def get_spike_events(data: np.ndarray, median: np.ndarray, num_dev: int = 5):
     return spike_indices, spike_counts
 
 
-def make_raster(ixs, colors):
+def make_raster(ixs, COLORS):
     """
     Takes a list of threshold crossings and returns a list of points (channel number, spike time) and colors.
     Used to make a raster plot.
@@ -105,7 +105,7 @@ def make_raster(ixs, colors):
 
     for j, i in enumerate(spikes):
         # randomly select a color
-        c = [colors[j]] * len(i)
+        c = [COLORS[j]] * len(i)
         colors += c
 
     return spikes, np.array(colors)
