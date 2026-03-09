@@ -1,0 +1,18 @@
+actors:
+  CueGenerator:
+    package: actors.cue_detector
+    class: CueGenerator
+
+  LaserTrigger:
+    package: actors.laser_trigger
+    class: LaserTrigger
+
+connections:
+  Cue-Laser:
+    sources:
+      - CueGenerator.q_out
+    sinks:
+      - LaserTrigger.q_in
+
+settings:
+  store_size: 5_000_000_000
