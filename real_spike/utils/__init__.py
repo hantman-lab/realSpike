@@ -3,3 +3,4 @@ from .acquisition import *
 from .latency import LatencyLogger
 from ._video import LazyVideo
 from .timing import TimingLogger, BehaviorLogger
+from ._save_model import save_model
