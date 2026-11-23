@@ -126,42 +126,32 @@ def get_multiplier(hSglx, js=0, ip=0, chan=2):
 def get_meta(file_path: str) -> Dict[str, str]:
     """
     Returns a dictionary of metadata associated with a previous SpikeGLX acquisition run.
-    Only used when DEBUG_MODE=True.
-
-    Should be a file_path that ends in `.meta`
 
     Parameters
     ----------
     file_path : str
         File name containing the metadata
     """
-    # conver to path object
     file_path = Path(file_path)
-
-    # initialize dictionary
-    metadata = dict()
-
-    if file_path.exists():
-        with file_path.open() as f:
-            mdata = f.read().splitlines()
-            for m in mdata:
-                item = m.split(sep="=")
-                if item[0][0] == "~":
-                    key = item[0][1 : len(item[0])]
-                else:
-                    key = item[0]
-                metadata.update({key: item[1]})
-    else:
+    if not file_path.exists():
         raise FileNotFoundError(file_path)
+
+    metadata = dict()
+    for line in file_path.read_text().splitlines():
+        if "=" not in line:  # skip blank or malformed lines
+            continue
+        key, val = line.split(
+            "=", 1
+        )  # split on the first "=" only, values can contain "="
+        metadata[key.lstrip("~")] = val  # table keys start with "~"
 
     return metadata
 
 
-def get_sample_data(file_path: str, meta_data: Dict[str, str]):
+def get_sample_data(file_path: str, meta_data: Dict[str, str]) -> np.memmap:
     """
-    Returns a numpy array of data from a previous SpikeGLX acquisition run.
-
-    Should be a file_path that ends in `.bin`
+    Returns a (samples, channels) int16 memmap of data from a previous SpikeGLX acquisition run.
+    Values are raw ADC counts.
 
     Parameters
     ----------
@@ -170,16 +160,21 @@ def get_sample_data(file_path: str, meta_data: Dict[str, str]):
     meta_data : Dict[str, str]
         Dictionary containing metadata needed to load the data in the correct format
     """
-    nChan = int(meta_data["nSavedChans"])
-    nFileSamp = int(int(meta_data["fileSizeBytes"]) / (2 * nChan))
+    n_chan = int(meta_data["nSavedChans"])
+    n_samp = Path(file_path).stat().st_size // (
+        2 * n_chan
+    )  # from the actual file size, in case the run was cut short
 
     data = np.memmap(
         file_path,
         dtype="int16",
         mode="r",
-        shape=(nChan, nFileSamp),
+        shape=(
+            n_samp,
+            n_chan,
+        ),  # samples are stored one after another, all channels per sample
         offset=0,
-        order="F",
+        order="C",
     )
 
     return data
